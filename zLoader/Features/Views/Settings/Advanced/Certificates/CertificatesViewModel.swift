@@ -70,7 +70,7 @@ class CertificatesViewModel: ObservableObject {
     @Published var showFailuresAlert: Bool = false
     
     var importSummaryMessage: String {
-        "Certificate import completed.\nSuccess: \(importSuccessCount)\nFailed: \(importFailedCount)"
+        String(localized: "Certificate import completed.\nSuccess: \(importSuccessCount)\nFailed: \(importFailedCount)", table: "CertificatesUI")
     }
     
     var failuresAlertMessage: String {
@@ -454,11 +454,11 @@ class CertificatesViewModel: ObservableObject {
             CertificateManager.shared.clearActiveCertificate()
             self.activeSerialNumber = nil
         }
-        self.alertMessage = "Certificate deleted locally."
+        self.alertMessage = String(localized: "Certificate deleted locally.", table: "CertificatesUI")
         self.showAlert    = true
     }
     
-    func makeCertificateActive(_ certificate: ALTX509Certificate) {
+    func makeCertificateActive(_ certificate: ALTX509Certificate, showConfirmation: Bool = true) {
         guard let signable = self.getSignableCertificate(for: certificate.serialNumber) else {
             self.errorMessage = NSLocalizedString("Cannot activate certificate: private key missing.", comment: "")
             return
@@ -467,17 +467,17 @@ class CertificatesViewModel: ObservableObject {
             try CertificateManager.shared.setActiveCertificate(signable)
             self.fetchActiveSerialNumber()
             self.alertMessage = "Active signing certificate replaced successfully."
-            self.showAlert    = true
+            self.showAlert    = showConfirmation
         } catch {
             self.errorMessage = "Failed to activate certificate: \(error.localizedDescription)"
         }
     }
 
-    func deactivateActiveCertificate() {
+    func deactivateActiveCertificate(showConfirmation: Bool = true) {
         CertificateManager.shared.clearActiveCertificate()
         self.activeSerialNumber = nil
         self.alertMessage = "Local certificate deactivated."
-        self.showAlert    = true
+        self.showAlert    = showConfirmation
     }
     
     func isCertificateLocallyCached(_ certificate: ALTX509Certificate) -> Bool {

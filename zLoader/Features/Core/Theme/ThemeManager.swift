@@ -182,6 +182,7 @@ struct ZLoaderThemedRoot<Content: View>: View {
 
 final class ZLoaderHostingController<Content: View>: UIHostingController<ZLoaderThemedRoot<Content>> {
     var ownsNavigation = false
+    var usesZynthecPalette = false
     private var previousNavigationBarHidden = false
 
     override func viewWillAppear(_ animated: Bool) {
@@ -194,7 +195,12 @@ final class ZLoaderHostingController<Content: View>: UIHostingController<ZLoader
 
     override func viewDidLoad() {
         super.viewDidLoad()
-        view.backgroundColor = .settingsBackground
+        if usesZynthecPalette {
+            view.tag = ZynthecSettingsStyle.hostingViewTag
+            view.backgroundColor = UIColor(ZynthecSettingsStyle.background)
+        } else {
+            view.backgroundColor = .settingsBackground
+        }
         ThemeManager.shared.applyAppearance(to: view)
     }
 
@@ -244,7 +250,8 @@ extension ThemeManager {
         }
     }
 
-    @MainActor func applyAppearance(to view: UIView) {
+    @MainActor func applyAppearance(to view: UIView, usesZynthecPalette: Bool = false) {
+        let usesZynthecPalette = usesZynthecPalette || view.tag == ZynthecSettingsStyle.hostingViewTag
         if view.tintColor == UIColor(named: "Primary") { view.tintColor = .altPrimary }
         if view.backgroundColor == UIColor(named: "Primary") {
             view.backgroundColor = .altPrimary
@@ -253,7 +260,7 @@ extension ThemeManager {
             }
         }
         if let table = view as? UITableView {
-            table.backgroundColor = .settingsBackground
+            table.backgroundColor = usesZynthecPalette ? .clear : .settingsBackground
             if table.delegate is SettingsViewController {
                 // The storyboard table draws its own inset group separators.
                 table.separatorStyle = .none
@@ -261,10 +268,13 @@ extension ThemeManager {
                 table.separatorStyle = .singleLine
             }
         }
-        if let collection = view as? UICollectionView { collection.backgroundColor = .settingsBackground }
+        if let collection = view as? UICollectionView { collection.backgroundColor = usesZynthecPalette ? .clear : .settingsBackground }
         // Settings destinations opt into the same individual rounded cards.
         // Tables outside Settings retain their existing native presentation.
-        if let cell = view as? ZLoaderSettingsTableViewCell {
+        if usesZynthecPalette, let cell = view as? UITableViewCell {
+            cell.backgroundColor = .clear
+            cell.contentView.backgroundColor = .clear
+        } else if let cell = view as? ZLoaderSettingsTableViewCell {
             cell.refreshSettingsAppearance()
         } else if let cell = view as? UITableViewCell, ZLoaderSettingsTableStyle.contains(cell), !(cell is InsetGroupTableViewCell) {
             ZLoaderSettingsTableStyle.apply(to: cell)
@@ -289,7 +299,7 @@ extension ThemeManager {
             image.tintColor = .settingsSymbol
         }
         view.setNeedsDisplay()
-        for child in view.subviews { applyAppearance(to: child) }
+        for child in view.subviews { applyAppearance(to: child, usesZynthecPalette: usesZynthecPalette) }
     }
 }
 

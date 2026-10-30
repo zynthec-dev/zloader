@@ -9,7 +9,7 @@ menus = []
 for path in sorted(settings.rglob("*.swift")):
     source = path.read_text()
     if ".navigationTitle(" in source:
-        assert ".zLoaderSettingsPage()" in source, f"Unstyled destination: {path}"
+        assert any(style in source for style in [".zLoaderSettingsPage()", ".zynthecSettingsPage()"]), f"Unstyled destination: {path}"
         menus.append(path.relative_to(root).as_posix())
     assert not re.search(r"\bForm\s*\{|\.listStyle\(|\.labelStyle\(\.titleOnly\)", source), path
     assert "listRowBackground(ZLoaderGlassBackground())" not in source, path

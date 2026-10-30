@@ -101,8 +101,8 @@ struct CertificateDetailView: View {
                     }
                 } header: {
                     Text("Developer Portal Info")
-                }.zLoaderSettingsRows()
-            }.zLoaderSettingsRows()
+                }.zynthecSettingsRows()
+            }.zynthecSettingsRows()
             
             if let certData = certificate.data {
                 let details = parseCertificate(derData: certData)
@@ -114,7 +114,7 @@ struct CertificateDetailView: View {
                     detailRow(title: "Serial Number (dec)", value: details.serialDec)
                 } header: {
                     Text("X.509 Fields")
-                }.zLoaderSettingsRows()
+                }.zynthecSettingsRows()
                 
                 if let from = details.validFrom, let until = details.validUntil {
                     let stats = computeValidityStats(from: from, until: until)
@@ -136,7 +136,7 @@ struct CertificateDetailView: View {
                         detailRow(title: "Validity Days", value: "Total: \(stats.totalDays), Elapsed: \(stats.elapsedDays), Remaining: \(stats.remainingDays)")
                     } header: {
                         Text("Validity Period")
-                    }.zLoaderSettingsRows()
+                    }.zynthecSettingsRows()
                 }
                 
                 Section {
@@ -210,7 +210,7 @@ struct CertificateDetailView: View {
                     .padding(.vertical, 4)
                 } header: {
                     Text("Signature & Public Key Details")
-                }.zLoaderSettingsRows()
+                }.zynthecSettingsRows()
             }
             
             Section {
@@ -304,10 +304,10 @@ struct CertificateDetailView: View {
                 }
             } header: {
                 Text("Cryptographic Keys")
-            }.zLoaderSettingsRows()
+            }.zynthecSettingsRows()
         }
         .navigationTitle("Certificate Details")
-        .zLoaderSettingsPage()
+        .zynthecSettingsPage()
         .labelStyle(.titleAndIcon)
         .environment(\.settingsEntryIconsVisible, true)
         #if !os(tvOS)

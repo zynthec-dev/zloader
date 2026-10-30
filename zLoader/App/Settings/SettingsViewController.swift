@@ -1019,7 +1019,7 @@ extension SettingsViewController
         if Section.allCases[indexPath.section] == .advancedSettings && AdvancedSettingsRow.allCases[indexPath.row] == .signingIdentities {
             let cell = InsetGroupTableViewCell(style: .default, reuseIdentifier: nil)
             cell.isSelectable = true
-            cell.textLabel?.text = NSLocalizedString("Signing Identities", comment: "")
+            cell.textLabel?.text = NSLocalizedString("Certificates", comment: "")
             cell.textLabel?.font = .preferredFont(forTextStyle: .body)
             cell.accessibilityIdentifier = "settings-signing-identities"
             cell.accessoryType = .disclosureIndicator
@@ -1077,7 +1077,7 @@ extension SettingsViewController
             let cell = InsetGroupTableViewCell(style: .default, reuseIdentifier: nil)
             cell.style = .middle
             cell.isSelectable = true
-            cell.textLabel?.text = NSLocalizedString("Signing Identities", comment: "")
+            cell.textLabel?.text = NSLocalizedString("Certificates", comment: "")
             cell.accessoryType = .disclosureIndicator
             decorateSettingsCell(cell)
             return cell
@@ -1235,7 +1235,7 @@ extension SettingsViewController
         case .account:
             tableView.deselectRow(at: indexPath, animated: true)
             if indexPath.row == 3 {
-                navigationController?.pushSigningView(SigningIdentitiesView())
+                navigationController?.pushSigningView(CertificatesView(presentingViewController: self))
             } else if indexPath.row == 4, self.activeTeam?.type.isPaid == true {
                 navigationController?.pushViewController(ZLoaderHostingController(rootView: DeveloperServicesView(presentingViewController: self), usesGlass: false), animated: true)
             } else if indexPath.row == 5 {
@@ -1324,7 +1324,7 @@ extension SettingsViewController
             switch row
             {
             case .signingIdentities:
-                navigationController?.pushSigningView(SigningIdentitiesView())
+                navigationController?.pushSigningView(CertificatesView(presentingViewController: self))
             case .sendFeedback:
                 let alertController = UIAlertController(title: "Send Feedback", message: "Choose a method to send feedback:", preferredStyle: .actionSheet)
                 

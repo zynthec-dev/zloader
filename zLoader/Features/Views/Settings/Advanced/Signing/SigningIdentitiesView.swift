@@ -18,6 +18,7 @@ private struct SigningNavigationRoot<Content: View>: View {
                 }
             }
         }
+        .tint(ZynthecSettingsStyle.text)
     }
 }
 
@@ -28,18 +29,15 @@ extension UINavigationController {
         })
         let controller = ZLoaderHostingController(rootView: root, usesGlass: false)
         controller.ownsNavigation = true
+        controller.usesZynthecPalette = true
         pushViewController(controller, animated: true)
     }
 }
 
 struct SigningIdentitiesView: View {
     @ObservedObject private var store = SigningIdentityStore.shared
-    @StateObject private var certificates = CertificatesViewModel()
-    @State private var managerAction: CertificateManagerAction?
     @State private var identityToRemove: ImportedSigningIdentity?
     @State private var confirmsRemoval = false
-    @State private var copiedActive = false
-    @State private var deactivate = false
     @State private var errorMessage: String?
 
     var body: some View {
@@ -68,15 +66,7 @@ struct SigningIdentitiesView: View {
                 }
             } footer: {
                 Text("An imported identity supports signing, installation and refresh without Apple login. Its profiles must authorize this device, the app and every extension. Refresh cannot extend their expiry dates.")
-            }.zLoaderSettingsRows()
-            ActiveCertSectionView(viewModel: certificates, hasCopiedActiveSerial: $copiedActive,
-                onDeactivate: { deactivate = true })
-            Section("Certificates & Keys") {
-                NavigationLink {
-                    CertificatesView(presentingViewController: UIApplication.shared.topViewController())
-                } label: { SettingsEntryLabel(title: "Certificates") }
-                NavigationLink { LocalKeyMaterialView() } label: { SettingsEntryLabel(title: "Keys & Local Signing Requests…") }
-            }.zLoaderSettingsRows()
+            }.zynthecSettingsRows()
             Section {
                 ForEach(store.identities) { identity in
                     NavigationLink { SigningIdentityEditor(identity: identity) } label: {
@@ -97,7 +87,12 @@ struct SigningIdentitiesView: View {
                 Group {
                     Text("Import a PKCS#12 certificate with its private key and the Apple-signed profiles for the app and its extensions. Removing an identity here does not revoke anything in your Developer Account.")
                 }
-            }.zLoaderSettingsRows()
+            }.zynthecSettingsRows()
+            Section {
+                NavigationLink { LocalKeyMaterialView() } label: {
+                    Text("Advanced key management", tableName: "CertificatesUI")
+                }
+            }.zynthecSettingsRows()
         }
         .alert("Remove Signing Identity?", isPresented: $confirmsRemoval) {
             SwiftUI.Button("Remove", role: .destructive) {
@@ -107,27 +102,8 @@ struct SigningIdentitiesView: View {
             }
             SwiftUI.Button("Cancel", role: .cancel) {}
         } message: { Text("This removes the local identity. Certificates and profiles on Apple's portal are not revoked.") }
-        .task { certificates.loadCertificates(presentingViewController: nil) }
-        .alert("Deactivate Certificate", isPresented: $deactivate) {
-            SwiftUI.Button("Deactivate", role: .destructive) { certificates.deactivateActiveCertificate() }
-            SwiftUI.Button("Cancel", role: .cancel) {}
-        } message: { Text("Are you sure you want to deactivate the active signing certificate locally?") }
-        .sheet(item: $managerAction, onDismiss: { certificates.loadCertificates(presentingViewController: nil) }) { action in
-            NavigationStack {
-                CertificatesView(initialAction: action, presentingViewController: UIApplication.shared.topViewController())
-                    .toolbar { ToolbarItem(placement: .cancellationAction) { SwiftUI.Button("Done") { managerAction = nil } } }
-            }
-        }
-        .toolbar {
-            ToolbarItemGroup(placement: .topBarTrailing) {
-                SwiftUI.Button { managerAction = .importCertificate } label: { Image(systemName: "square.and.arrow.down") }
-                    .accessibilityLabel("Import Certificate and Private Key")
-                SwiftUI.Button { managerAction = .create } label: { Image(systemName: "plus") }
-                    .accessibilityLabel("Create Certificate")
-            }
-        }
-        .navigationTitle("Signing Identities")
-        .zLoaderSettingsPage()
+        .navigationTitle(Text("Signing & profiles", tableName: "CertificatesUI"))
+        .zynthecSettingsPage()
         .labelStyle(.titleAndIcon)
         .alert("Signing Identity", isPresented: Binding(get: { errorMessage != nil }, set: { if !$0 { errorMessage = nil } })) {
             SwiftUI.Button("OK", role: .cancel) { errorMessage = nil }

@@ -10,13 +10,7 @@ import SwiftUI
 import SideSign
 import UniformTypeIdentifiers
 
-enum CertificateManagerAction: String, Identifiable {
-    case create, importCertificate
-    var id: String { rawValue }
-}
-
 struct CertificatesView: View {
-    var initialAction: CertificateManagerAction? = nil
     weak var presentingViewController: UIViewController?
 
     @StateObject private var viewModel = CertificatesViewModel()
@@ -28,26 +22,29 @@ struct CertificatesView: View {
         ["key", "pem", "der"].compactMap { UTType(filenameExtension: $0) }
     }
 
+    @State private var requests: [LocalKeyMaterialStore.Item] = []
+    @State private var showRequestSheet = false
+    @State private var requestDocument: CertificateRequestDocument?
+    @State private var requestFilename = "SigningRequest.csr"
+    @State private var exportRequest = false
+    @State private var requestToDelete: LocalKeyMaterialStore.Item?
+    @State private var detailCertificate: ALTX509Certificate?
     @State private var showPortalCertificates = false
     @State private var showKeyMaterials = false
     @State private var showCreateSheet            = false
     @State private var showFileImporter           = false
-    @State private var showRevokeConfirmation     = false
-    @State private var showDeactivateConfirmation = false
     @State private var showDeleteConfirmation     = false
     @State private var showExportPasswordPrompt   = false
     @State private var showClearKeyConfirmation   = false
     @State private var hasInitialLoaded           = false
-    @State private var hasCopiedActiveSerial      = false
 
     @State private var exportPasswordInput   = ""
+    @State private var importPasswordInput = ""
     @State private var fileImportMode: FileImportMode       = .certificate
     @State private var keyTextImportItem: KeyTextImportItem? = nil
     @State private var privateKeyTextInput   = ""
 
-    @State private var deleteLocalOnRevoke: Bool = true
 
-    @State private var certificateToRevoke:      ALTX509Certificate? = nil
     @State private var certificateToDelete:      ALTX509Certificate? = nil
     @State private var certificateToExport:      ALTX509Certificate? = nil
     @State private var certificateToAddKeyFor:   ALTX509Certificate? = nil
@@ -56,25 +53,9 @@ struct CertificatesView: View {
     var body: some View {
         ZStack {
             List {
-                Section {
-                    SwiftUI.Button { showKeyMaterials = true } label: {
-                        SettingsEntryLabel(title: "Keys & Local Signing Requests…", systemImage: "key.horizontal")
-                    }
-                    SwiftUI.Button {
-                        showPortalCertificates = true
-                    } label: {
-                        SettingsEntryLabel(title: "Developer Account Certificates", systemImage: "icloud.and.arrow.down")
-                    }
-                }.zLoaderSettingsRows()
-                ActiveCertSectionView(
-                    viewModel: viewModel,
-                    hasCopiedActiveSerial: $hasCopiedActiveSerial,
-                    onDeactivate: { showDeactivateConfirmation = true }
-                )
                 CertificatesListView(
                     viewModel: viewModel,
                     onRowTap:     { pushDetailView(for: $0) },
-                    onRevoke:     { presentRevokeAlert(for: $0) },
                     onExportP12:  { cert in
                         certificateToExport = cert
                         exportPasswordInput = ""
@@ -92,6 +73,12 @@ struct CertificatesView: View {
                     },
                     onDelete: { certificateToDelete = $0; showDeleteConfirmation = true }
                 )
+                savedRequests
+                Section {
+                    NavigationLink { SigningIdentitiesView() } label: {
+                        Text("Signing & profiles", tableName: "CertificatesUI")
+                    }.accessibilityIdentifier("certificates-signing-configuration")
+                }.zynthecSettingsRows()
             }
             .refreshable {
                 await withCheckedContinuation { continuation in
@@ -101,58 +88,70 @@ struct CertificatesView: View {
                 }
             }
             .navigationTitle("Certificates")
-        .zLoaderSettingsPage()
+            .navigationBarTitleDisplayMode(.inline)
+        .zynthecSettingsPage()
         .labelStyle(.titleAndIcon)
         .environment(\.settingsEntryIconsVisible, true)
             .toolbar {
-                ToolbarItemGroup(placement: .navigationBarTrailing) {
-                    SwiftUI.Button {
-                        viewModel.isGlobalHideActive.toggle()
-                    } label: {
-                        Image(systemName: viewModel.isGlobalHideActive ? "eye.slash" : "eye")
-                    }
-                    .accessibilityLabel("Toggle Hide Sensitive Information")
-
-                    SwiftUI.Button {
-                        showCreateSheet = true
-                    } label: {
-                        Image(systemName: "plus")
-                    }
-                    .accessibilityLabel("Create Certificate")
-                    .disabled(viewModel.team == nil)
-
-                    SwiftUI.Button {
-                        importCertificatesAction()
-                    } label: {
-                        Image(systemName: "square.and.arrow.down")
-                    }
-                    .accessibilityLabel("Import Certificates")
+                ToolbarItem(placement: .topBarTrailing) {
+                    Menu {
+                        SwiftUI.Button { showRequestSheet = true } label: {
+                            Label { Text("Request certificate…", tableName: "CertificatesUI") } icon: { Image(systemName: "doc.badge.plus") }
+                        }.accessibilityIdentifier("certificates-request")
+                        SwiftUI.Button { showCreateSheet = true } label: {
+                            Label { Text("Create Apple certificate…", tableName: "CertificatesUI") } icon: { Image(systemName: "plus.rectangle") }
+                        }.accessibilityIdentifier("certificates-create-apple")
+                        SwiftUI.Button { importCertificatesAction() } label: {
+                            Label { Text("Import from file…", tableName: "CertificatesUI") } icon: { Image(systemName: "square.and.arrow.down") }
+                        }.accessibilityIdentifier("certificates-import-file")
+                        SwiftUI.Button { showPortalCertificates = true } label: {
+                            Label { Text("Import from Apple Portal…", tableName: "CertificatesUI") } icon: { Image(systemName: "apple.logo") }
+                        }.accessibilityIdentifier("certificates-import-portal")
+                    } label: { Image(systemName: "plus") }
+                    .accessibilityLabel(Text("Add certificate", tableName: "CertificatesUI"))
+                    .accessibilityIdentifier("certificates-add")
                 }
             }
             .onAppear {
                 guard !hasInitialLoaded else { return }
                 hasInitialLoaded = true
+                reloadRequests()
                 viewModel.loadCertificates(presentingViewController: nil)
-                if initialAction == .create { showCreateSheet = true }
-                if initialAction == .importCertificate { importCertificatesAction() }
             }
 
             if viewModel.isLoading { LoadingOverlay() }
         }
-        .alert("Error", isPresented: $viewModel.showErrorAlert) {
-            SwiftUI.Button("OK", role: .cancel) { viewModel.errorMessage = nil }
+        .alert("Error", isPresented: $viewModel.showErrorAlert.deferredPresentation()) {
+            SwiftUI.Button("OK", role: .cancel) { DispatchQueue.main.async { viewModel.errorMessage = nil } }
         } message: {
             Text(viewModel.errorMessage ?? "An unknown error occurred.")
         }
-        .sheet(isPresented: $showPortalCertificates) {
+        .navigationDestination(isPresented: Binding(get: { detailCertificate != nil }, set: { if !$0 { detailCertificate = nil } })) {
+            if let detailCertificate { CertificateDetailView(certificate: detailCertificate, viewModel: viewModel) }
+        }
+        .sheet(isPresented: $showRequestSheet, onDismiss: reloadRequests) {
+            CertificateRequestView(onCreated: reloadRequests)
+        }
+        .fileExporter(isPresented: $exportRequest, document: requestDocument, contentType: .data, defaultFilename: requestFilename) { result in
+            if case .failure(let error) = result { viewModel.errorMessage = error.localizedDescription }
+            requestDocument = nil
+        }
+        .alert(Text("Delete request?", tableName: "CertificatesUI"), isPresented: Binding(get: { requestToDelete != nil }, set: { if !$0 { requestToDelete = nil } })) {
+            SwiftUI.Button(role: .destructive) {
+                if let requestToDelete {
+                    do { try LocalKeyMaterialStore.delete(requestToDelete); reloadRequests() }
+                    catch { viewModel.errorMessage = error.localizedDescription }
+                }
+                requestToDelete = nil
+            } label: { Text("Delete", tableName: "CertificatesUI") }
+            SwiftUI.Button(role: .cancel) { requestToDelete = nil } label: { Text("Cancel", tableName: "CertificatesUI") }
+        } message: { Text("The local request and its stored key will be removed. Certificates already imported are kept.", tableName: "CertificatesUI") }
+        .sheet(isPresented: $showPortalCertificates, onDismiss: { viewModel.loadCertificates(presentingViewController: nil) }) {
             NavigationStack {
                 AccountCertificatesView()
                     .toolbar {
                         ToolbarItem(placement: .confirmationAction) {
-                            SwiftUI.Button("Done") {
-                                showPortalCertificates = false
-                                viewModel.loadCertificates(presentingViewController: nil)
-                            }
+                            SwiftUI.Button { showPortalCertificates = false } label: { Text("Done", tableName: "CertificatesUI") }
                         }
                     }
             }
@@ -167,41 +166,40 @@ struct CertificatesView: View {
                 isPresented: $showCreateSheet
             )
         }
-        .alert("Revoke Certificate", isPresented: $showRevokeConfirmation) {
-            SwiftUI.Button("Revoke", role: .destructive) {
-                if let cert = certificateToRevoke {
-                    viewModel.revokeCertificate(cert, keepLocal: false, presentingViewController: presentingViewController)
-                }
-            }
-            SwiftUI.Button("Cancel", role: .cancel) {}
-        } message: { Text("Are you sure you want to revoke this certificate? This will permanently delete the certificate on Apple's servers.") }
-        .alert("Deactivate Certificate", isPresented: $showDeactivateConfirmation) {
-            SwiftUI.Button("Deactivate", role: .destructive) { viewModel.deactivateActiveCertificate() }
-            SwiftUI.Button("Cancel", role: .cancel) {}
-        } message: {
-            Text("Are you sure you want to deactivate the active signing certificate locally?")
-        }
         .alert("Delete Certificate", isPresented: $showDeleteConfirmation) {
             SwiftUI.Button("Delete", role: .destructive) {
-                if let cert = certificateToDelete { viewModel.deleteCertificate(cert) }
+                if let cert = certificateToDelete {
+                    DispatchQueue.main.async { viewModel.deleteCertificate(cert) }
+                }
             }
             SwiftUI.Button("Cancel", role: .cancel) {}
         } message: {
             Text("Are you sure you want to delete this certificate locally? This will remove it from the cached local store.")
         }
-        .alert("Import Certificate Password", isPresented: $viewModel.showPasswordPromptForImport) {
-            SecureField("Password", text: $viewModel.importPasswordInput)
-            SwiftUI.Button("Import") { viewModel.submitImportPassword() }
-            SwiftUI.Button("Cancel", role: .cancel) { viewModel.cancelImport() }
+        .onChange(of: viewModel.showPasswordPromptForImport) { _, _ in importPasswordInput = "" }
+        .alert("Import Certificate Password", isPresented: importPasswordPrompt) {
+            SecureField("Password", text: $importPasswordInput)
+            SwiftUI.Button("Import") {
+                // Allow the native alert to finish its view update before
+                // publishing the imported certificate list and next alert.
+                let password = importPasswordInput
+                DispatchQueue.main.async {
+                    viewModel.importPasswordInput = password
+                    viewModel.submitImportPassword()
+                }
+            }
+            SwiftUI.Button("Cancel", role: .cancel) {
+                DispatchQueue.main.async { viewModel.cancelImport() }
+            }
         } message: {
             Text("Enter the password to decrypt the imported certificate file.\n\nFile: \(viewModel.currentImportFilename)")
         }
-        .alert("Success", isPresented: $viewModel.showAlert) {
-            SwiftUI.Button("OK", role: .cancel) { viewModel.alertMessage = nil }
+        .alert("Success", isPresented: $viewModel.showAlert.deferredPresentation()) {
+            SwiftUI.Button("OK", role: .cancel) { DispatchQueue.main.async { viewModel.alertMessage = nil } }
         } message: {
             Text(viewModel.alertMessage ?? "")
         }
-        .alert("Import Summary", isPresented: $viewModel.showImportSummary) {
+        .alert("Import Summary", isPresented: $viewModel.showImportSummary.deferredPresentation()) {
             if viewModel.importFailedCount > 0 {
                 SwiftUI.Button("Show Failed") {
                     DispatchQueue.main.async {
@@ -215,8 +213,8 @@ struct CertificatesView: View {
         } message: {
             Text(viewModel.importSummaryMessage)
         }
-        .sheet(isPresented: $viewModel.showFailuresAlert) {
-            NavigationView {
+        .sheet(isPresented: $viewModel.showFailuresAlert.deferredPresentation()) {
+            NavigationStack {
                 List {
                     ForEach(viewModel.failedImportsList, id: \.self) { failure in
                         Text(failure)
@@ -225,7 +223,7 @@ struct CertificatesView: View {
                     }
                 }
                 .navigationTitle("Import Failures")
-        .zLoaderSettingsPage()
+        .zynthecSettingsPage()
         .labelStyle(.titleAndIcon)
         .environment(\.settingsEntryIconsVisible, true)
                 #if !os(tvOS)
@@ -254,7 +252,7 @@ struct CertificatesView: View {
         .alert("Clear Private Key", isPresented: $showClearKeyConfirmation) {
             if let cert = certificateToClearKeyFor {
                 SwiftUI.Button("Clear Key", role: .destructive) {
-                    viewModel.clearPrivateKey(for: cert)
+                    DispatchQueue.main.async { viewModel.clearPrivateKey(for: cert) }
                     certificateToClearKeyFor = nil
                 }
             }
@@ -306,7 +304,7 @@ struct CertificatesView: View {
         }
         .sheet(isPresented: Binding<Bool>(
             get: { viewModel.shareURL != nil },
-            set: { if !$0 { viewModel.shareURL = nil } }
+            set: { if !$0 { DispatchQueue.main.async { viewModel.shareURL = nil } } }
         )) {
             if let url = viewModel.shareURL {
                 ActivityViewController(activityItems: [url])
@@ -314,41 +312,61 @@ struct CertificatesView: View {
         }
     }
 
-    private func pushDetailView(for cert: ALTX509Certificate) {
-        let metadata = DeveloperPortalMetadata(
-            identifier: cert.identifier,
-            machineName: cert.machineName,
-            machineIdentifier: cert.machineIdentifier,
-            requesterEmail: cert.requesterEmail,
-            requesterFirstName: cert.requesterFirstName,
-            requesterLastName: cert.requesterLastName,
-            displayName: cert.displayName,
-            certificateType: cert.certificateType,
-            certificateTypeName: cert.certificateTypeName,
-            certificateTypeId: cert.certificateTypeId,
-            platform: cert.platform,
-            platformName: cert.platformName,
-            isManaged: cert.isManaged,
-            status: cert.status,
-            ownerName: cert.ownerName,
-            ownerId: cert.ownerId,
-            autoRotationEnabled: cert.autoRotationEnabled,
-            requestedDate: cert.requestedDate,
-            serialNumDecimal: cert.serialNumDecimal
-        )
-        let detailVC = ZLoaderHostingController(rootView: CertificateDetailView(certificate: cert, portalMetadata: metadata, viewModel: viewModel), usesGlass: false)
-        #if !os(tvOS)
-        let appearance = UINavigationBarAppearance()
-        appearance.configureWithDefaultBackground()
-        detailVC.navigationItem.scrollEdgeAppearance = appearance
-        detailVC.navigationItem.standardAppearance   = appearance
-        #endif
-        presentingViewController?.navigationController?.pushViewController(detailVC, animated: true)
+    private var importPasswordPrompt: Binding<Bool> {
+        Binding(get: { viewModel.showPasswordPromptForImport }, set: { visible in
+            // UIKit may dismiss the secure field during a SwiftUI update.
+            // Avoid publishing a redundant/synchronous model change there.
+            DispatchQueue.main.async {
+                if viewModel.showPasswordPromptForImport != visible {
+                    viewModel.showPasswordPromptForImport = visible
+                }
+            }
+        })
     }
 
-    private func presentRevokeAlert(for cert: ALTX509Certificate) {
-        certificateToRevoke = cert
-        showRevokeConfirmation = true
+    @ViewBuilder private var savedRequests: some View {
+                if !requests.isEmpty {
+                    Section {
+                        ForEach(requests) { request in
+                            HStack(spacing: 12) {
+                                VStack(alignment: .leading, spacing: 4) {
+                                    Text(verbatim: request.name).font(.headline)
+                                    Text("Signing request", tableName: "CertificatesUI")
+                                        .font(.caption).foregroundStyle(ZynthecSettingsStyle.secondary)
+                                }.frame(maxWidth: .infinity, alignment: .leading)
+                                SwiftUI.Button {
+                                    if let data = request.request {
+                                        requestDocument = CertificateRequestDocument(data: data)
+                                        requestFilename = request.name.replacingOccurrences(of: "/", with: "_") + ".csr"
+                                        exportRequest = true
+                                    }
+                                } label: { Image(systemName: "square.and.arrow.up").frame(minWidth: 44, minHeight: 44) }
+                                    .buttonStyle(.plain)
+                                    .accessibilityLabel(Text("Export request", tableName: "CertificatesUI"))
+                                    .accessibilityIdentifier("certificate-request-export-" + request.id)
+                                Menu {
+                                    SwiftUI.Button { showKeyMaterials = true } label: { Text("Manage matching key…", tableName: "CertificatesUI") }
+                                    SwiftUI.Button(role: .destructive) { requestToDelete = request } label: { Text("Delete request…", tableName: "CertificatesUI") }
+                                } label: { Image(systemName: "ellipsis").frame(minWidth: 44, minHeight: 44) }
+                                    .buttonStyle(.plain)
+                                    .accessibilityLabel(Text("Request actions", tableName: "CertificatesUI"))
+                                    .accessibilityIdentifier("certificate-request-actions-" + request.id)
+                            }
+                            .accessibilityElement(children: .contain)
+                            .accessibilityIdentifier("certificate-request-row-" + request.id)
+                        }
+                    } header: { Text("Requests", tableName: "CertificatesUI") }
+                        .zynthecSettingsRows()
+                }
+    }
+
+    private func pushDetailView(for cert: ALTX509Certificate) {
+        detailCertificate = cert
+    }
+
+    private func reloadRequests() {
+        do { requests = try LocalKeyMaterialStore.list().filter { $0.request != nil } }
+        catch { viewModel.errorMessage = error.localizedDescription }
     }
 
     private func importPrivateKeyAction(for cert: ALTX509Certificate) {
@@ -413,59 +431,59 @@ private struct CreateCertificateSheetView: View {
     @ObservedObject var viewModel: CertificatesViewModel
     var presentingViewController: UIViewController?
     @Binding var isPresented: Bool
-
-    @State private var machineName: String = "zLoader - \(UIDevice.current.name)"
+    @State private var machineName = "zLoader - \(UIDevice.current.name)"
     @State private var selectedCertificateType: CertificateType = .development
 
-    private var isPaidWarningVisible: Bool {
-        selectedCertificateType.isPaidOnly && !viewModel.isPaidAccount
-    }
-
+    private var isPaidWarningVisible: Bool { selectedCertificateType.isPaidOnly && !viewModel.isPaidAccount }
     private var canCreate: Bool {
-        !machineName.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty && !viewModel.isLoading && !isPaidWarningVisible
+        AuthManager.shared.isAuthenticated && !machineName.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty && !viewModel.isLoading && !isPaidWarningVisible
     }
 
     var body: some View {
-        NavigationView {
+        NavigationStack {
             List {
-                Section(
-                    header: Text("Certificate Information"),
-                    footer: Text(isPaidWarningVisible
-                        ? "This certificate type requires a paid Apple Developer account."
-                        : "Select the certificate type and machine name. This registers the certificate on Apple's servers and saves the private key locally.")
-                ) {
-                    Picker("Certificate Type", selection: $selectedCertificateType) {
-                        ForEach(viewModel.availableCertificateTypes, id: \.rawValue) { certType in
-                            Text(certType.displayName).tag(certType)
+                if !AuthManager.shared.isAuthenticated {
+                    Text("Sign in to an Apple Account in Settings to create an Apple certificate.", tableName: "CertificatesUI")
+                        .foregroundStyle(ZynthecSettingsStyle.secondary).zynthecSettingsRows()
+                }
+                Section {
+                    TextField(text: $machineName) { Text("Name", tableName: "CertificatesUI") }
+                    Picker(selection: $selectedCertificateType) {
+                        ForEach(viewModel.availableCertificateTypes, id: \.rawValue) { type in
+                            Text(verbatim: type.displayName).tag(type)
                         }
+                    } label: { Text("Certificate type", tableName: "CertificatesUI") }
+                    if viewModel.isLoading { ProgressView() }
+                    if let error = viewModel.errorMessage { Text(verbatim: error).foregroundStyle(.red) }
+                } footer: {
+                    if isPaidWarningVisible {
+                        Text("This certificate type requires a paid Apple Developer account.", tableName: "CertificatesUI")
+                    } else {
+                        Text("The certificate is created in your Apple Developer team. Its private key is saved on this device.", tableName: "CertificatesUI")
                     }
-
-                    TextField("Machine Name", text: $machineName)
-                    if viewModel.isLoading { ProgressView("Creating certificate…") }
-                    if let error = viewModel.errorMessage { Text(error).foregroundStyle(.red).textSelection(.enabled) }
-                }.zLoaderSettingsRows()
+                }.zynthecSettingsRows()
             }
-            .navigationTitle("New Certificate")
-        .zLoaderSettingsPage()
-        .labelStyle(.titleAndIcon)
-        .environment(\.settingsEntryIconsVisible, true)
+            .zynthecSettingsPage()
+            .navigationTitle(Text("Create Apple certificate", tableName: "CertificatesUI"))
+            .navigationBarTitleDisplayMode(.inline)
+            .interactiveDismissDisabled(viewModel.isLoading)
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
-                    SwiftUI.Button("Cancel") {
-                        isPresented = false
-                    }
+                    SwiftUI.Button { isPresented = false } label: { Text("Cancel", tableName: "CertificatesUI") }
+                        .disabled(viewModel.isLoading)
                 }
                 ToolbarItem(placement: .confirmationAction) {
-                    SwiftUI.Button("Create") {
+                    SwiftUI.Button {
                         let name = machineName.trimmingCharacters(in: .whitespacesAndNewlines)
-                        guard !name.isEmpty else { return }
+                        guard canCreate else { return }
                         Task {
                             if await viewModel.createCertificate(machineName: name, type: selectedCertificateType, presentingViewController: presentingViewController) {
                                 isPresented = false
                             }
                         }
-                    }
+                    } label: { Text("Create", tableName: "CertificatesUI") }
                     .disabled(!canCreate)
+                    .accessibilityIdentifier("certificates-create-confirm")
                 }
             }
         }
@@ -482,6 +500,10 @@ struct AccountCertificatesView: View {
     var body: some View {
         List {
             Section {
+                if !AuthManager.shared.isAuthenticated {
+                    Text("Sign in to an Apple Account in Settings to import from the portal.", tableName: "CertificatesUI")
+                        .foregroundStyle(ZynthecSettingsStyle.secondary)
+                }
                 if viewModel.hasFetchedRemote && viewModel.portalCertificates.isEmpty {
                     Text("There are no certificates on this developer team.")
                         .foregroundStyle(.secondary)
@@ -518,7 +540,7 @@ struct AccountCertificatesView: View {
                 Group {
                     Text("Apple provides the public certificate. A matching local private key is associated automatically. For a certificate from your Mac, import its .p12 containing the private key.")
                 }
-            }.zLoaderSettingsRows()
+            }.zynthecSettingsRows()
         }
         .alert("Revoke Certificate", isPresented: $confirmsRevoke) {
             SwiftUI.Button("Revoke", role: .destructive) {
@@ -527,21 +549,22 @@ struct AccountCertificatesView: View {
             SwiftUI.Button("Cancel", role: .cancel) {}
         } message: { Text("Are you sure you want to revoke this certificate? This will permanently delete the certificate on Apple's servers.") }
         .navigationTitle("Certificates from Account")
-        .zLoaderSettingsPage()
+        .navigationBarTitleDisplayMode(.inline)
+        .zynthecSettingsPage()
         .labelStyle(.titleAndIcon)
         .environment(\.settingsEntryIconsVisible, true)
-        .task { await viewModel.downloadPortalCertificates() }
+        .task { if AuthManager.shared.isAuthenticated { await viewModel.downloadPortalCertificates() } }
         .refreshable { await viewModel.downloadPortalCertificates() }
         .overlay { if viewModel.isLoading { ProgressView() } }
-        .alert("Error", isPresented: $viewModel.showErrorAlert) {
-            SwiftUI.Button("OK", role: .cancel) { viewModel.errorMessage = nil }
+        .alert("Error", isPresented: $viewModel.showErrorAlert.deferredPresentation()) {
+            SwiftUI.Button("OK", role: .cancel) { DispatchQueue.main.async { viewModel.errorMessage = nil } }
         } message: { Text(viewModel.errorMessage ?? "") }
-        .alert("Zertifikat importiert", isPresented: $viewModel.showAlert) {
+        .alert("Zertifikat importiert", isPresented: $viewModel.showAlert.deferredPresentation()) {
             SwiftUI.Button("OK", role: .cancel) {}
         } message: { Text(viewModel.alertMessage ?? "") }
         .sheet(isPresented: Binding(
             get: { viewModel.shareURL != nil },
-            set: { if !$0 { viewModel.shareURL = nil } }
+            set: { if !$0 { DispatchQueue.main.async { viewModel.shareURL = nil } } }
         )) {
             if let url = viewModel.shareURL { ActivityViewController(activityItems: [url]) }
         }

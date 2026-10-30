@@ -7,6 +7,9 @@ final class ContainerUITests: XCTestCase {
         continueAfterFailure = false
         app.launchArguments = ["-AppleLanguages", "(de)", "-AppleLocale", "de_DE"]
         app.launch()
+        let denyNotifications = XCUIApplication(bundleIdentifier: "com.apple.springboard").buttons
+            .matching(NSPredicate(format: "label IN %@", ["Nicht erlauben", "Don’t Allow", "Don't Allow"])).firstMatch
+        if denyNotifications.waitForExistence(timeout: 2) { denyNotifications.tap() }
     }
 
     func test001OnboardingAndContainerPages() throws {
@@ -317,6 +320,7 @@ final class ContainerUITests: XCTestCase {
         app.alerts.buttons["Abbrechen"].tap()
         sign.tap()
         let method = app.buttons["signing-method"]
+        for _ in 0..<6 where !method.isHittable { app.swipeUp() }
         XCTAssertTrue(method.waitForExistence(timeout: 10))
         method.tap()
         XCTAssertTrue(app.buttons["Importiertes Zertifikat"].waitForExistence(timeout: 5))
@@ -340,6 +344,7 @@ final class ContainerUITests: XCTestCase {
         for _ in 0..<10 where !identities.isHittable { app.swipeUp() }
         XCTAssertTrue(identities.isHittable)
         identities.tap()
+        app.buttons["certificates-signing-configuration"].tap()
         XCTAssertTrue(app.buttons["app-operations-signing-method"].waitForExistence(timeout: 10))
         app.buttons["app-operations-signing-method"].tap()
         app.buttons["Importiertes Zertifikat"].tap()
@@ -348,6 +353,126 @@ final class ContainerUITests: XCTestCase {
         // Leave the simulator's persistent operation selection as it was.
         app.buttons["app-operations-signing-method"].tap()
         app.buttons["Apple-Account"].tap()
+    }
+
+    func test010SimpleCertificatesAndSigningRequest() throws {
+        openCertificates()
+        XCTAssertTrue(app.buttons["certificates-add"].waitForExistence(timeout: 10))
+        XCTAssertEqual(app.navigationBars.count, 1)
+        // UIKit's menu wrapper also exposes an unnamed internal button.
+        XCTAssertEqual(app.navigationBars.buttons.matching(NSPredicate(format: "label != ''")).count, 2)
+        XCTAssertFalse(app.staticTexts["Aktives lokales Zertifikat"].exists)
+        attach("certificates086-overview-light")
+        app.buttons["certificates-add"].tap()
+        for identifier in ["certificates-request", "certificates-create-apple", "certificates-import-file", "certificates-import-portal"] {
+            XCTAssertTrue(app.buttons[identifier].waitForExistence(timeout: 5))
+        }
+        attach("certificates086-plus-menu")
+        app.buttons["certificates-create-apple"].tap()
+        XCTAssertTrue(app.navigationBars["Apple-Zertifikat erstellen"].waitForExistence(timeout: 5))
+        XCTAssertFalse(app.buttons["certificates-create-confirm"].isEnabled)
+        app.buttons["Abbrechen"].tap()
+
+        app.buttons["certificates-add"].tap()
+        app.buttons["certificates-request"].tap()
+        let requestName = "zLoader UI Request " + String(UUID().uuidString.prefix(8))
+        let field = app.textFields["certificate-request-name"]
+        XCTAssertTrue(field.waitForExistence(timeout: 5))
+        field.tap()
+        field.typeText(requestName)
+        attach("certificates086-request-form")
+        app.buttons["certificate-request-create"].tap()
+        let request = app.otherElements.matching(NSPredicate(format: "identifier BEGINSWITH %@", "certificate-request-row-"))
+            .containing(.staticText, identifier: requestName).firstMatch
+        XCTAssertTrue(request.waitForExistence(timeout: 20))
+        attach("certificates086-saved-request")
+        request.buttons.matching(NSPredicate(format: "identifier BEGINSWITH %@", "certificate-request-actions-")).firstMatch.tap()
+        app.buttons["Anfrage löschen…"].tap()
+        app.alerts.buttons["Abbrechen"].tap()
+        XCTAssertTrue(request.exists)
+        request.buttons.matching(NSPredicate(format: "identifier BEGINSWITH %@", "certificate-request-actions-")).firstMatch.tap()
+        app.buttons["Anfrage löschen…"].tap()
+        app.alerts.buttons["Löschen"].tap()
+        XCTAssertFalse(request.waitForExistence(timeout: 2))
+
+        app.buttons["certificates-add"].tap()
+        app.buttons["certificates-import-portal"].tap()
+        XCTAssertTrue(app.buttons["Fertig"].waitForExistence(timeout: 5))
+        attach("certificates086-portal")
+        app.buttons["Fertig"].tap()
+        XCTAssertTrue(app.buttons["certificates-add"].waitForExistence(timeout: 5))
+    }
+
+    func test011CertificateImportAndDirectActivation() throws {
+        openCertificates()
+        app.buttons["certificates-add"].tap()
+        app.buttons["certificates-import-file"].tap()
+        let browse = app.buttons.matching(NSPredicate(format: "label IN %@", ["Browse", "Durchsuchen"])).firstMatch
+        if browse.waitForExistence(timeout: 3) { browse.tap() }
+        let local = app.staticTexts.matching(NSPredicate(format: "label IN %@", ["On My iPhone", "Auf meinem iPhone"])).firstMatch
+        if local.waitForExistence(timeout: 3) { local.tap() }
+        let folder = app.staticTexts["zLoader"].firstMatch
+        if folder.waitForExistence(timeout: 3) { folder.tap() }
+        let file = app.staticTexts.matching(NSPredicate(format: "label IN %@", ["Certificate-UI-086", "Certificate-UI-086.p12"])).firstMatch
+        XCTAssertTrue(file.waitForExistence(timeout: 10), "Seed the generated certificate fixture into the simulator's Documents folder")
+        file.tap()
+        let open = app.buttons.matching(NSPredicate(format: "label IN %@", ["Open", "Öffnen"])).firstMatch
+        if open.waitForExistence(timeout: 3) { open.tap() }
+        let password = app.secureTextFields.firstMatch
+        XCTAssertTrue(password.waitForExistence(timeout: 10))
+        password.tap()
+        password.typeText("ui-test-password")
+        app.alerts.buttons.matching(NSPredicate(format: "label IN %@", ["Import", "Importieren"])).firstMatch.tap()
+        XCTAssertTrue(app.alerts.buttons["OK"].waitForExistence(timeout: 10))
+        app.alerts.buttons["OK"].tap()
+        let row = app.otherElements.matching(NSPredicate(format: "identifier BEGINSWITH %@", "certificate-row-"))
+            .containing(.staticText, identifier: "zLoader UI Certificate").firstMatch
+        XCTAssertTrue(row.waitForExistence(timeout: 10))
+        let use = row.buttons.matching(NSPredicate(format: "identifier BEGINSWITH %@", "certificate-use-")).firstMatch
+        XCTAssertTrue(use.exists)
+        let useID = use.identifier
+        let previousActive = app.buttons.matching(NSPredicate(format: "label == %@", "Zertifikat deaktivieren")).firstMatch
+        let previousUseID = previousActive.exists ? previousActive.identifier : nil
+        use.tap()
+        XCTAssertEqual(app.buttons[useID].label, "Zertifikat deaktivieren")
+        XCTAssertFalse(app.alerts.firstMatch.exists)
+        attach("certificates086-active-light")
+
+        // Restart to verify persisted certificate selection and the dark palette.
+        openCertificates(appearance: "dark")
+        XCTAssertTrue(app.buttons[useID].waitForExistence(timeout: 10))
+        XCTAssertEqual(app.buttons[useID].label, "Zertifikat deaktivieren")
+        attach("certificates086-active-dark")
+        app.buttons[useID].tap()
+        XCTAssertEqual(app.buttons[useID].label, "Zertifikat verwenden")
+        XCTAssertFalse(app.alerts.firstMatch.exists)
+        let actions = row.buttons.matching(NSPredicate(format: "identifier BEGINSWITH %@", "certificate-actions-")).firstMatch
+        actions.tap()
+        app.buttons["Details"].tap()
+        XCTAssertTrue(app.navigationBars["Zertifikatsdetails"].waitForExistence(timeout: 5) || app.navigationBars["Certificate Details"].exists)
+        XCTAssertEqual(app.navigationBars.count, 1)
+        app.navigationBars.buttons.firstMatch.tap()
+        actions.tap()
+        app.buttons["Nur lokal löschen…"].tap()
+        app.alerts.buttons.matching(NSPredicate(format: "label IN %@", ["Delete", "Löschen"])).firstMatch.tap()
+        if app.alerts.buttons["OK"].waitForExistence(timeout: 5) { app.alerts.buttons["OK"].tap() }
+        XCTAssertFalse(row.exists)
+        if let previousUseID, app.buttons[previousUseID].exists { app.buttons[previousUseID].tap() }
+    }
+
+    private func openCertificates(appearance: String = "light") {
+        app.terminate()
+        app.launchArguments = ["-AppleLanguages", "(de)", "-AppleLocale", "de_DE", "-hasCompletedOnboarding", "YES", "-zLoader.appearance", appearance]
+        XCUIDevice.shared.orientation = .portrait
+        app.launch()
+        let settings = app.buttons["Einstellungen"].firstMatch
+        XCTAssertTrue(settings.waitForExistence(timeout: 20))
+        settings.tap()
+        let certificates = app.cells["settings-signing-identities"]
+        for _ in 0..<10 where !certificates.isHittable { app.swipeUp() }
+        XCTAssertTrue(certificates.isHittable)
+        certificates.tap()
+        XCTAssertTrue(app.buttons["certificates-add"].waitForExistence(timeout: 10))
     }
 
     @discardableResult private func selectIdentity(virtual: Bool) -> String {

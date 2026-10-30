@@ -65,7 +65,7 @@ struct SignIPAView: View {
                     } label: { Label { Text("Choose Certificate & Profiles", tableName: "AppActions") } icon: { Image(systemName: "person.badge.key") } }
                         .accessibilityIdentifier("signing-import-identity")
                 }
-                NavigationLink { SigningIdentitiesView() } label: { SettingsEntryLabel(title: "Signing Identities") }
+                NavigationLink { CertificatesView(presentingViewController: UIApplication.shared.topViewController()) } label: { SettingsEntryLabel(title: "Certificates") }
                 if method == .importedCertificate {
                     Text("No Apple Account is required when you use an imported certificate with its private key and matching profiles.")
                         .font(.footnote).foregroundStyle(.secondary)

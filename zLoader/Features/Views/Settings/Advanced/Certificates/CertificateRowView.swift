@@ -6,233 +6,95 @@
 //  Copyright © 2026 SideStore. All rights reserved.
 //
 
+
 import SwiftUI
 import SideSign
 
 struct CertificateRowView: View {
     let cert: ALTX509Certificate
     @ObservedObject var viewModel: CertificatesViewModel
-    
-    var onRevoke:     () -> Void
-    var onExportP12:  () -> Void
-    var onClearKey:   () -> Void
-    var onAddKeyBin:  () -> Void
-    var onAddKeyText: () -> Void
-    var onDelete:     () -> Void
-    
-    private var hasPrivateKey: Bool { viewModel.hasPrivateKey(for: cert) }
-    private var isActive:      Bool { cert.serialNumber == viewModel.activeSerialNumber }
-    private var isRemote:      Bool { viewModel.remoteSerials.contains(cert.serialNumber) }
-    
-    var body: some View {
-        HStack {
-            VStack(alignment: .leading, spacing: 4) {
-                Text((cert.machineName ?? cert.name) + (isRemote ? " (R)" : ""))
-                    .font(.body)
-                
-                let displaySerial = viewModel.displaySerial(for: cert)
-                Text("\(Text("Serial: ").font(.footnote))\(Text(displaySerial).font(.system(.footnote, design: .monospaced)))")
-                .foregroundColor(.secondary)
-                
-                if let displayIdent = viewModel.displayIdentifier(for: cert) {
-                    Text("\(Text("ID: ").font(.footnote))\(Text(displayIdent).font(.system(.footnote, design: .monospaced)))")
-                    .foregroundColor(.gray)
-                }
-                
-                if let brief = getBriefInfo(for: cert.data) {
-                    CertBriefInfoView(brief: brief, cert: cert, viewModel: viewModel)
-                }
-                
-                if let displayReq = viewModel.displayRequester(for: cert) {
-                    let isHidden = displayReq.contains("•")
-                    Text("\(Text("Requester: ").font(.footnote))\(Text(displayReq).font(isHidden ? .system(.footnote, design: .monospaced) : .footnote))")
-                    .foregroundColor(.secondary)
-                }
-                
-                if let createdBy = viewModel.displayCreatedBy(for: cert) {
-                    let isHidden = createdBy.contains("•")
-                    Text("\(Text("Created By: ").font(.footnote))\(Text(createdBy).font(isHidden ? .system(.footnote, design: .monospaced) : .footnote))")
-                    .foregroundColor(.secondary)
-                }
-                
-                Text("\(Text("Keys: ").font(.footnote))\(Text(hasPrivateKey ? "public + private" : "public").font(.footnote))")
-                .foregroundColor(.secondary)
-            }
-            
-            Spacer()
-            
-            CertTrailingIcons(isActive: isActive, isRemote: isRemote, onRevoke: onRevoke)
-        }
-        .padding(.vertical, 4)
-        .contentShape(Rectangle())
-        .contextMenu {
-            let isMasked = viewModel.isSerialMasked(for: cert)
-            SwiftUI.Button { toggleReveal() } label: {
-                Label(isMasked ? "Reveal Details" : "Hide Details",
-                      systemImage: isMasked ? "eye" : "eye.slash")
-            }
-            if hasPrivateKey && !isActive {
-                SwiftUI.Button { viewModel.makeCertificateActive(cert) } label: {
-                    SettingsEntryLabel(title: "Activate", systemImage: "key.fill")
-                }
-            }
-            SwiftUI.Button {
-                #if !os(tvOS)
-                UIPasteboard.general.string = cert.serialNumber
-                #endif
-            } label: {
-                SettingsEntryLabel(title: "Copy S/N", systemImage: "doc.on.doc")
-            }
-            if hasPrivateKey {
-                CertPrivateKeyMenuItems(cert: cert, viewModel: viewModel, onExportP12: onExportP12, onClearKey: onClearKey)
-            } else {
-                CertPublicKeyMenuItems(cert: cert, viewModel: viewModel, onAddKeyBin: onAddKeyBin, onAddKeyText: onAddKeyText, onExportP12: onExportP12)
-            }
-            if isRemote {
-                SwiftUI.Button(role: .destructive) { onRevoke() } label: {
-                    SettingsEntryLabel(title: "Revoke", systemImage: "xmark.circle")
-                }
-            }
-            if viewModel.isCertificateLocallyCached(cert) {
-                SwiftUI.Button(role: .destructive) { onDelete() } label: {
-                    SettingsEntryLabel(title: "Delete", systemImage: "trash")
-                }
-            }
-        }
-    }
-    
-    private func toggleReveal() {
-        if viewModel.revealedSerials.contains(cert.serialNumber) { viewModel.revealedSerials.remove(cert.serialNumber) }
-        else { viewModel.revealedSerials.insert(cert.serialNumber) }
-    }
-}
-
-private struct CertBriefInfoView: View {
-    let brief: CertificateBriefInfo
-    let cert: ALTX509Certificate
-    @ObservedObject var viewModel: CertificatesViewModel
-    
-    var body: some View {
-        let displayType      = viewModel.displayBriefType(for: brief, cert: cert)
-        let displayValidity  = viewModel.displayBriefValidity(for: brief, cert: cert)
-        let isTypeHidden     = displayType.contains("•")
-        let isValidityHidden = displayValidity.contains("•")
-        Group {
-            Text("\(Text("Type: ").font(.footnote))\(Text(displayType).font(isTypeHidden ? .system(.footnote, design: .monospaced) : .footnote))")
-            .foregroundColor(.secondary)
-            if let typeName = viewModel.displayCertificateTypeName(for: cert) {
-                let isTypeNameHidden = typeName.contains("•")
-                Text("\(Text("Type Name: ").font(.footnote))\(Text(typeName).font(isTypeNameHidden ? .system(.footnote, design: .monospaced) : .footnote))")
-                .foregroundColor(.secondary)
-            }
-            Text("\(Text("Validity: ").font(.footnote))\(Text(displayValidity).font(isValidityHidden ? .system(.footnote, design: .monospaced) : .footnote))")
-            .foregroundColor(.secondary)
-        }
-    }
-}
-
-private struct CertTrailingIcons: View {
-    let isActive: Bool
-    let isRemote: Bool
-    var onRevoke: () -> Void
-    
-    var body: some View {
-        HStack(spacing: 8) {
-            if isActive {
-                Image(systemName: "checkmark.circle.fill").foregroundColor(.green).font(.title3)
-            } else if isRemote {
-                SwiftUI.Button { onRevoke() } label: {
-                    Image(systemName: "xmark.circle.fill").foregroundColor(.red).font(.title3)
-                }
-                .buttonStyle(.plain)
-            }
-            Image(systemName: "chevron.right").foregroundColor(Color(.tertiaryLabel)).font(.footnote)
-        }
-    }
-}
-
-private struct AdaptiveMenu<Content: View>: View {
-    let title: String
-    let systemImage: String
-    @ViewBuilder let content: () -> Content
-    
-    var body: some View {
-        #if !os(tvOS)
-        Menu {
-            content()
-        } label: {
-            Label(title, systemImage: systemImage)
-        }
-        #else
-        content()
-        #endif
-    }
-}
-
-private struct CertPrivateKeyMenuItems: View {
-    let cert: ALTX509Certificate
-    @ObservedObject var viewModel: CertificatesViewModel
+    var onDetails: () -> Void
     var onExportP12: () -> Void
-    var onClearKey:  () -> Void
-    
-    var body: some View {
-        Group {
-            if let signable = viewModel.getSignableCertificate(for: cert.serialNumber) {
-                SwiftUI.Button { CertificateExporter.copyPrivateKey(signable) } label: { SettingsEntryLabel(title: "Copy pKey (.pem)", systemImage: "doc.on.doc") }
-                AdaptiveMenu(title: "Export Private Key", systemImage: "key") {
-                    SwiftUI.Button { CertificateExporter.sharePrivateKeyAsPEM(signable, onShare: { viewModel.shareURL = $0 }) { viewModel.errorMessage = $0 } } label: { SettingsEntryLabel(title: "Export (.pem)", systemImage: "doc.text") }
-                    SwiftUI.Button { CertificateExporter.sharePrivateKeyAsDER(signable, onShare: { viewModel.shareURL = $0 }) { viewModel.errorMessage = $0 } } label: { SettingsEntryLabel(title: "Export (.der)", systemImage: "doc.text") }
-                }
-            }
-            
-            Divider()
-            
-            SwiftUI.Button { CertificateExporter.copyPublicCertAsPEM(cert) { viewModel.errorMessage = $0 } } label: { SettingsEntryLabel(title: "Copy pubK (.pem)", systemImage: "doc.on.doc") }
-            AdaptiveMenu(title: "Export Public Key", systemImage: "square.and.arrow.up") {
-                SwiftUI.Button { CertificateExporter.sharePublicCertAsPEM(cert, onShare: { viewModel.shareURL = $0 }) { viewModel.errorMessage = $0 } } label: { SettingsEntryLabel(title: "Export (.pem)", systemImage: "doc.text") }
-                SwiftUI.Button { CertificateExporter.sharePublicCertAsDER(cert, onShare: { viewModel.shareURL = $0 }) { viewModel.errorMessage = $0 } } label: { SettingsEntryLabel(title: "Export (.der)", systemImage: "doc.text") }
-            }
-            
-            Divider()
-            
-            AdaptiveMenu(title: "Export Certificate", systemImage: "square.and.arrow.up") {
-                SwiftUI.Button { onExportP12() } label: { SettingsEntryLabel(title: "Export Full (.p12)", systemImage: "doc.zipper") }
-                SwiftUI.Button { CertificateExporter.sharePublicCertAsDER(cert, onShare: { viewModel.shareURL = $0 }) { viewModel.errorMessage = $0 } } label: { SettingsEntryLabel(title: "Export Public (.der)", systemImage: "doc.text") }
-                SwiftUI.Button { CertificateExporter.sharePublicCertAsPEM(cert, onShare: { viewModel.shareURL = $0 }) { viewModel.errorMessage = $0 } } label: { SettingsEntryLabel(title: "Export Public (.pem)", systemImage: "doc.text") }
-            }
-            
-            SwiftUI.Button(role: .destructive) { onClearKey() } label: { SettingsEntryLabel(title: "Clear pKey", systemImage: "key.slash") }
-        }
-    }
-}
-
-private struct CertPublicKeyMenuItems: View {
-    let cert: ALTX509Certificate
-    @ObservedObject var viewModel: CertificatesViewModel
-    var onAddKeyBin:  () -> Void
+    var onClearKey: () -> Void
+    var onAddKeyBin: () -> Void
     var onAddKeyText: () -> Void
-    var onExportP12:  () -> Void
-    
+    var onDelete: () -> Void
+    @Environment(\.dynamicTypeSize) private var dynamicTypeSize
+
+    private var hasPrivateKey: Bool { viewModel.hasPrivateKey(for: cert) }
+    private var isActive: Bool { cert.serialNumber == viewModel.activeSerialNumber }
+    private var isExpired: Bool { cert.expiryDate <= Date() }
+
     var body: some View {
         Group {
-            SwiftUI.Button { onAddKeyText() } label: { SettingsEntryLabel(title: "Add pKey (.pem)", systemImage: "square.and.pencil") }
-            SwiftUI.Button { onAddKeyBin() } label: { SettingsEntryLabel(title: "Add pKey (.der)", systemImage: "doc.badge.plus") }
-            
-            Divider()
-            
-            SwiftUI.Button { CertificateExporter.copyPublicCertAsPEM(cert) { viewModel.errorMessage = $0 } } label: { SettingsEntryLabel(title: "Copy pubK (.pem)", systemImage: "doc.on.doc") }
-            AdaptiveMenu(title: "Export Public Key", systemImage: "square.and.arrow.up") {
-                SwiftUI.Button { CertificateExporter.sharePublicCertAsPEM(cert, onShare: { viewModel.shareURL = $0 }) { viewModel.errorMessage = $0 } } label: { SettingsEntryLabel(title: "Export (.pem)", systemImage: "doc.text") }
-                SwiftUI.Button { CertificateExporter.sharePublicCertAsDER(cert, onShare: { viewModel.shareURL = $0 }) { viewModel.errorMessage = $0 } } label: { SettingsEntryLabel(title: "Export (.der)", systemImage: "doc.text") }
+            if dynamicTypeSize.isAccessibilitySize {
+                VStack(alignment: .leading, spacing: 12) { summary; actions }
+            } else {
+                HStack(spacing: 12) { summary; actions }
             }
-            
-            Divider()
-            
-            AdaptiveMenu(title: "Export Certificate", systemImage: "square.and.arrow.up") {
-                SwiftUI.Button { onExportP12() } label: { SettingsEntryLabel(title: "Export Full (.p12)", systemImage: "doc.zipper") }
-                SwiftUI.Button { CertificateExporter.sharePublicCertAsDER(cert, onShare: { viewModel.shareURL = $0 }) { viewModel.errorMessage = $0 } } label: { SettingsEntryLabel(title: "Export Public (.der)", systemImage: "doc.text") }
-                SwiftUI.Button { CertificateExporter.sharePublicCertAsPEM(cert, onShare: { viewModel.shareURL = $0 }) { viewModel.errorMessage = $0 } } label: { SettingsEntryLabel(title: "Export Public (.pem)", systemImage: "doc.text") }
+        }
+        .accessibilityElement(children: .contain)
+        .accessibilityIdentifier("certificate-row-" + cert.serialNumber)
+    }
+
+    private var summary: some View {
+        VStack(alignment: .leading, spacing: 5) {
+            Text(verbatim: cert.machineName ?? cert.name).font(.headline)
+            HStack(spacing: 5) {
+                Text("Expires", tableName: "CertificatesUI")
+                Text(cert.expiryDate, format: .dateTime.day().month().year())
             }
+            .font(.caption).foregroundStyle(ZynthecSettingsStyle.secondary)
+            Group {
+                if isExpired { Text("Expired", tableName: "CertificatesUI").foregroundStyle(.red) }
+                else if isActive { Text("Active", tableName: "CertificatesUI") }
+                else if !hasPrivateKey { Text("Private key missing", tableName: "CertificatesUI") }
+                else { Text("Ready to use", tableName: "CertificatesUI") }
+            }
+            .font(.caption).foregroundStyle(ZynthecSettingsStyle.secondary)
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
+    }
+
+    private var actions: some View {
+        HStack(spacing: 4) {
+            if hasPrivateKey && (!isExpired || isActive) {
+                SwiftUI.Button {
+                    if isActive { viewModel.deactivateActiveCertificate(showConfirmation: false) }
+                    else { viewModel.makeCertificateActive(cert, showConfirmation: false) }
+                } label: {
+                    if isActive { Label { Text("Active", tableName: "CertificatesUI") } icon: { Image(systemName: "checkmark") } }
+                    else { Text("Use", tableName: "CertificatesUI") }
+                }
+                .buttonStyle(ZynthecActionButtonStyle())
+                .accessibilityLabel(Text(isActive ? "Deactivate certificate" : "Use certificate", tableName: "CertificatesUI"))
+                .accessibilityIdentifier("certificate-use-" + cert.serialNumber)
+                .disabled(viewModel.isLoading)
+            }
+            Menu {
+                SwiftUI.Button(action: onDetails) { Label { Text("Details", tableName: "CertificatesUI") } icon: { Image(systemName: "info.circle") } }
+                if hasPrivateKey {
+                    SwiftUI.Button(action: onExportP12) { Label { Text("Export as P12…", tableName: "CertificatesUI") } icon: { Image(systemName: "square.and.arrow.up") } }
+                } else {
+                    SwiftUI.Button(action: onAddKeyBin) { Label { Text("Add private key from file…", tableName: "CertificatesUI") } icon: { Image(systemName: "key") } }
+                    SwiftUI.Button(action: onAddKeyText) { Text("Paste private key…", tableName: "CertificatesUI") }
+                }
+                SwiftUI.Button {
+                    CertificateExporter.sharePublicCertAsDER(cert, onShare: { viewModel.shareURL = $0 }) { viewModel.errorMessage = $0 }
+                } label: { Text("Export public certificate…", tableName: "CertificatesUI") }
+                if hasPrivateKey {
+                    SwiftUI.Button(role: .destructive, action: onClearKey) { Text("Remove private key…", tableName: "CertificatesUI") }
+                }
+                if viewModel.isCertificateLocallyCached(cert) {
+                    SwiftUI.Button(role: .destructive, action: onDelete) { Label { Text("Delete locally…", tableName: "CertificatesUI") } icon: { Image(systemName: "trash") } }
+                }
+            } label: {
+                Image(systemName: "ellipsis").frame(minWidth: 44, minHeight: 44)
+                    .foregroundStyle(ZynthecSettingsStyle.text)
+            }
+            .buttonStyle(.plain)
+            .accessibilityLabel(Text("Certificate actions", tableName: "CertificatesUI"))
+            .accessibilityIdentifier("certificate-actions-" + cert.serialNumber)
         }
     }
 }

@@ -6,203 +6,45 @@
 //  Copyright © 2026 SideStore. All rights reserved.
 //
 
+
 import SwiftUI
 import SideSign
 
 struct CertificatesListView: View {
     @ObservedObject var viewModel: CertificatesViewModel
-
-    var onRowTap:     (ALTX509Certificate) -> Void
-    var onRevoke:     (ALTX509Certificate) -> Void
-    var onExportP12:  (ALTX509Certificate) -> Void
-    var onClearKey:   (ALTX509Certificate) -> Void
-    var onAddKeyBin:  (ALTX509Certificate) -> Void
+    var onRowTap: (ALTX509Certificate) -> Void
+    var onExportP12: (ALTX509Certificate) -> Void
+    var onClearKey: (ALTX509Certificate) -> Void
+    var onAddKeyBin: (ALTX509Certificate) -> Void
     var onAddKeyText: (ALTX509Certificate) -> Void
-    var onDelete:     (ALTX509Certificate) -> Void
+    var onDelete: (ALTX509Certificate) -> Void
 
-    var body: some View {
-        if viewModel.certificates.isEmpty {
-            Section(header: Text("All Certificates")) {
-                if viewModel.isLoading {
-                    Text("Fetching certificates...").foregroundColor(.secondary)
-                } else {
-                    Text("No local certificates found.").foregroundColor(.secondary)
-                }
-            }.zLoaderSettingsRows()
-        } else {
-            ForEach(viewModel.groupedCertificatesList) { group in
-                Section {
-                    ForEach(group.certificates, id: \.serialNumber) { cert in
-                        AdaptiveTappableRow {
-                            onRowTap(cert)
-                        } content: {
-                            CertificateRowView(
-                                cert:        cert,
-                                viewModel:   viewModel,
-                                onRevoke:    { onRevoke(cert) },
-                                onExportP12: { onExportP12(cert) },
-                                onClearKey:  { onClearKey(cert) },
-                                onAddKeyBin: { onAddKeyBin(cert) },
-                                onAddKeyText:{ onAddKeyText(cert) },
-                                onDelete:    { onDelete(cert) }
-                            )
-                        }
-                        #if !os(tvOS)
-                        .swipeActions(edge: .trailing, allowsFullSwipe: false) {
-                            if viewModel.team != nil {
-                                SwiftUI.Button(role: .destructive) {
-                                    onRevoke(cert)
-                                } label: {
-                                    SettingsEntryLabel(title: "Revoke", systemImage: "xmark.circle")
-                                }
-                            }
-                            if viewModel.isCertificateLocallyCached(cert) {
-                                SwiftUI.Button(role: .destructive) {
-                                    onDelete(cert)
-                                } label: {
-                                    SettingsEntryLabel(title: "Delete", systemImage: "trash")
-                                }
-                            }
-                        }
-                        .swipeActions(edge: .leading, allowsFullSwipe: true) {
-                            if cert.serialNumber == viewModel.activeSerialNumber {
-                                SwiftUI.Button {
-                                    viewModel.deactivateActiveCertificate()
-                                } label: {
-                                    SettingsEntryLabel(title: "Deactivate", systemImage: "xmark.seal")
-                                }
-                                .tint(.gray)
-                            } else {
-                                SwiftUI.Button {
-                                    viewModel.makeCertificateActive(cert)
-                                } label: {
-                                    SettingsEntryLabel(title: "Activate", systemImage: "checkmark.seal")
-                                }
-                                .tint(Color(uiColor: .altPrimary))
-                            }
-                        }
-                        #endif
-                    }
-                } header: {
-                    CertGroupHeaderView(group: group, viewModel: viewModel)
-                } footer: {
-                Group {
-                        if group.id == viewModel.groupedCertificatesList.last?.id {
-                            Text("Suffix (R) indicates the certificate is registered remotely on Apple's developer portal.")
-                        }
-                }
-            }.zLoaderSettingsRows()
-            }
+    private var certificates: [ALTX509Certificate] {
+        viewModel.certificates.sorted {
+            let order = ($0.machineName ?? $0.name).localizedCaseInsensitiveCompare($1.machineName ?? $1.name)
+            return order == .orderedSame ? $0.serialNumber < $1.serialNumber : order == .orderedAscending
         }
-    }
-}
-
-private struct CertGroupHeaderView: View {
-    let group: GroupedCertificates
-    @ObservedObject var viewModel: CertificatesViewModel
-    #if os(tvOS)
-    @State private var showSortDialog: Bool = false
-    @State private var showGroupDialog: Bool = false
-    #endif
-
-    private var headerTitle: String {
-        if group.name == "Certificates" {
-            let localCount = viewModel.certificates.count
-            if viewModel.hasFetchedRemote {
-                let remoteCount = viewModel.remoteSerials.count
-                return "Certificates \(localCount)(\(remoteCount)R)"
-            } else {
-                return "Certificates \(localCount)"
-            }
-        }
-        return group.name
     }
 
     var body: some View {
-        HStack(spacing: 12) {
-            Text(headerTitle)
-            Spacer()
-            #if !os(tvOS)
-            Menu {
-                ForEach(SortOption.allCases) { option in
-                    SwiftUI.Button {
-                        if viewModel.currentSort == option { viewModel.isAscending.toggle() }
-                        else { viewModel.currentSort = option; viewModel.isAscending = (option == .name) }
-                    } label: {
-                        if viewModel.currentSort == option {
-                            Label("\(option.rawValue) \(viewModel.isAscending ? "↑" : "↓")", systemImage: "checkmark")
-                        } else {
-                            Text(option.rawValue)
-                        }
-                    }
+        Section {
+            if certificates.isEmpty {
+                VStack(alignment: .leading, spacing: 6) {
+                    Text("No certificates yet", tableName: "CertificatesUI").font(.headline)
+                    Text("Add a certificate using the plus button.", tableName: "CertificatesUI")
+                        .foregroundStyle(ZynthecSettingsStyle.secondary)
                 }
-            } label: {
-                Image(systemName: "arrow.up.arrow.down").font(.system(size: 13)).foregroundColor(.accentColor)
+                .accessibilityIdentifier("certificates-empty")
             }
-            Menu {
-                Picker("Group By", selection: $viewModel.currentGroup) {
-                    ForEach(GroupOption.allCases) { option in
-                        Text(option.rawValue).tag(option)
-                    }
-                }
-            } label: {
-                Image(systemName: "rectangle.3.group").font(.system(size: 13)).foregroundColor(.accentColor)
+            ForEach(certificates, id: \.serialNumber) { cert in
+                CertificateRowView(cert: cert, viewModel: viewModel,
+                    onDetails: { onRowTap(cert) },
+                    onExportP12: { onExportP12(cert) },
+                    onClearKey: { onClearKey(cert) },
+                    onAddKeyBin: { onAddKeyBin(cert) },
+                    onAddKeyText: { onAddKeyText(cert) },
+                    onDelete: { onDelete(cert) })
             }
-            #else
-            SwiftUI.Button {
-                showSortDialog = true
-            } label: {
-                Image(systemName: "arrow.up.arrow.down").font(.system(size: 13)).foregroundColor(.accentColor)
-            }
-            .confirmationDialog("Sort Certificates", isPresented: $showSortDialog) {
-                ForEach(SortOption.allCases) { option in
-                    SwiftUI.Button("\(option.rawValue) \(viewModel.currentSort == option && viewModel.isAscending ? "↑" : "↓")") {
-                        if viewModel.currentSort == option { viewModel.isAscending.toggle() }
-                        else { viewModel.currentSort = option; viewModel.isAscending = (option == .name) }
-                    }
-                }
-            }
-            SwiftUI.Button {
-                showGroupDialog = true
-            } label: {
-                Image(systemName: "rectangle.3.group").font(.system(size: 13)).foregroundColor(.accentColor)
-            }
-            .confirmationDialog("Group Certificates", isPresented: $showGroupDialog) {
-                ForEach(GroupOption.allCases) { option in
-                    SwiftUI.Button(option.rawValue) {
-                        viewModel.currentGroup = option
-                    }
-                }
-            }
-            #endif
-            SwiftUI.Button {
-                viewModel.isSectionHideActive.toggle()
-            } label: {
-                Image(systemName: viewModel.isSectionHideActive ? "eye.slash" : "eye")
-                    .font(.body)
-                    .foregroundColor(viewModel.isGlobalHideActive ? .gray : .accentColor)
-            }
-            .buttonStyle(.plain)
-            .disabled(viewModel.isGlobalHideActive)
-        }
-    }
-}
-
-private struct AdaptiveTappableRow<Content: View>: View {
-    let action: () -> Void
-    @ViewBuilder let content: () -> Content
-
-    var body: some View {
-        #if !os(tvOS)
-        content()
-            .contentShape(Rectangle())
-            .onTapGesture(perform: action)
-        #else
-        SwiftUI.Button(action: action) {
-            content()
-                .contentShape(Rectangle())
-        }
-        .buttonStyle(PlainButtonStyle())
-        #endif
+        }.zynthecSettingsRows()
     }
 }

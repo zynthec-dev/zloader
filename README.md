@@ -146,6 +146,9 @@ Container navigation and Settings order: [single back navigation and menu placem
 Imported signing without Apple login, German app actions and refreshed tab icons:
 [selection and validation, 0.8.5](docs/zloader/IMPORTED-SIGNING-0.8.5.md).
 
+Simplified certificate overview, direct activation and a single creation/import
+menu: [changes and validation, 0.8.6](docs/zloader/CERTIFICATES-0.8.6.md).
+
 Latest changes: [installation certificate recovery and Signed IPAs, 0.7.18](docs/zloader/CERTIFICATES-SIGNED-IPAS-0.7.18.md).
 
 Appearance and connection corrections for 0.7.20: [validation and remaining device checks](docs/zloader/UI-TUNNEL-0.7.20.md).

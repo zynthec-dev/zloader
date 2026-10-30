@@ -1,0 +1,625 @@
+{
+  "sourceLanguage": "en",
+  "strings": {
+    "Active": {
+      "extractionState": "manual",
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Aktiv"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Active"
+          }
+        }
+      }
+    },
+    "Add a certificate using the plus button.": {
+      "extractionState": "manual",
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Füge über das Plus ein Zertifikat hinzu."
+          }
+        }
+      }
+    },
+    "Add certificate": {
+      "extractionState": "manual",
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Zertifikat hinzufügen"
+          }
+        }
+      }
+    },
+    "Add private key from file…": {
+      "extractionState": "manual",
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Privaten Schlüssel aus Datei ergänzen…"
+          }
+        }
+      }
+    },
+    "Cancel": {
+      "extractionState": "manual",
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Abbrechen"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Cancel"
+          }
+        }
+      }
+    },
+    "Certificate actions": {
+      "extractionState": "manual",
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Zertifikatsaktionen"
+          }
+        }
+      }
+    },
+    "Certificate deleted locally.": {
+      "extractionState": "manual",
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Zertifikat lokal gelöscht."
+          }
+        }
+      }
+    },
+    "Certificate import completed.\nSuccess: %lld\nFailed: %lld": {
+      "extractionState": "manual",
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Zertifikatsimport abgeschlossen.\nErfolgreich: %lld\nFehlgeschlagen: %lld"
+          }
+        }
+      }
+    },
+    "Certificate request": {
+      "extractionState": "manual",
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Zertifikatsanfrage"
+          }
+        }
+      }
+    },
+    "Certificate type": {
+      "extractionState": "manual",
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Zertifikatstyp"
+          }
+        }
+      }
+    },
+    "Create": {
+      "extractionState": "manual",
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Erstellen"
+          }
+        }
+      }
+    },
+    "Create Apple certificate": {
+      "extractionState": "manual",
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Apple-Zertifikat erstellen"
+          }
+        }
+      }
+    },
+    "Create Apple certificate…": {
+      "extractionState": "manual",
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Apple-Zertifikat erstellen…"
+          }
+        }
+      }
+    },
+    "Create a signing request (CSR), then export it to your certificate authority. The matching private key stays on this device.": {
+      "extractionState": "manual",
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Erstelle eine Zertifikatsanfrage (CSR) und exportiere sie für deine Zertifizierungsstelle. Der zugehörige private Schlüssel bleibt auf diesem Gerät."
+          }
+        }
+      }
+    },
+    "Create request": {
+      "extractionState": "manual",
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Anfrage erstellen"
+          }
+        }
+      }
+    },
+    "Deactivate certificate": {
+      "extractionState": "manual",
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Zertifikat deaktivieren"
+          }
+        }
+      }
+    },
+    "Delete": {
+      "extractionState": "manual",
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Löschen"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Delete"
+          }
+        }
+      }
+    },
+    "Delete locally…": {
+      "extractionState": "manual",
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nur lokal löschen…"
+          }
+        }
+      }
+    },
+    "Delete request?": {
+      "extractionState": "manual",
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Anfrage löschen?"
+          }
+        }
+      }
+    },
+    "Delete request…": {
+      "extractionState": "manual",
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Anfrage löschen…"
+          }
+        }
+      }
+    },
+    "Details": {
+      "extractionState": "manual",
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Details"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Details"
+          }
+        }
+      }
+    },
+    "Email (optional)": {
+      "extractionState": "manual",
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "E-Mail-Adresse (optional)"
+          }
+        }
+      }
+    },
+    "Expired": {
+      "extractionState": "manual",
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Abgelaufen"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Expired"
+          }
+        }
+      }
+    },
+    "Expires": {
+      "extractionState": "manual",
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Gültig bis"
+          }
+        }
+      }
+    },
+    "Export as P12…": {
+      "extractionState": "manual",
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Als P12 exportieren…"
+          }
+        }
+      }
+    },
+    "Export public certificate…": {
+      "extractionState": "manual",
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Öffentliches Zertifikat exportieren…"
+          }
+        }
+      }
+    },
+    "Export request": {
+      "extractionState": "manual",
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Anfrage exportieren"
+          }
+        }
+      }
+    },
+    "Import from Apple Portal…": {
+      "extractionState": "manual",
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Aus Apple-Portal importieren…"
+          }
+        }
+      }
+    },
+    "Import from file…": {
+      "extractionState": "manual",
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Aus Datei importieren…"
+          }
+        }
+      }
+    },
+    "Manage matching key…": {
+      "extractionState": "manual",
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Zugehörigen Schlüssel verwalten…"
+          }
+        }
+      }
+    },
+    "Name": {
+      "extractionState": "manual",
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Name"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Name"
+          }
+        }
+      }
+    },
+    "No certificates yet": {
+      "extractionState": "manual",
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Noch keine Zertifikate"
+          }
+        }
+      }
+    },
+    "Organization (optional)": {
+      "extractionState": "manual",
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Organisation (optional)"
+          }
+        }
+      }
+    },
+    "Paste private key…": {
+      "extractionState": "manual",
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Privaten Schlüssel einfügen…"
+          }
+        }
+      }
+    },
+    "Private key missing": {
+      "extractionState": "manual",
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Privater Schlüssel fehlt"
+          }
+        }
+      }
+    },
+    "Ready to use": {
+      "extractionState": "manual",
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Bereit zur Verwendung"
+          }
+        }
+      }
+    },
+    "Remove private key…": {
+      "extractionState": "manual",
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Privaten Schlüssel entfernen…"
+          }
+        }
+      }
+    },
+    "Request actions": {
+      "extractionState": "manual",
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Aktionen für die Anfrage"
+          }
+        }
+      }
+    },
+    "Request certificate": {
+      "extractionState": "manual",
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Zertifikat anfragen"
+          }
+        }
+      }
+    },
+    "Request certificate…": {
+      "extractionState": "manual",
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Zertifikat anfragen…"
+          }
+        }
+      }
+    },
+    "Requests": {
+      "extractionState": "manual",
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Anfragen"
+          }
+        }
+      }
+    },
+    "Sign in to an Apple Account in Settings to create an Apple certificate.": {
+      "extractionState": "manual",
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Melde dich in den Einstellungen mit einem Apple-Account an, um ein Apple-Zertifikat zu erstellen."
+          }
+        }
+      }
+    },
+    "Sign in to an Apple Account in Settings to import from the portal.": {
+      "extractionState": "manual",
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Melde dich in den Einstellungen mit einem Apple-Account an, um Zertifikate aus dem Portal zu importieren."
+          }
+        }
+      }
+    },
+    "Signing & profiles": {
+      "extractionState": "manual",
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Signieren und Profile"
+          }
+        }
+      }
+    },
+    "Signing request": {
+      "extractionState": "manual",
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Zertifikatsanfrage"
+          }
+        }
+      }
+    },
+    "The certificate is created in your Apple Developer team. Its private key is saved on this device.": {
+      "extractionState": "manual",
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Das Zertifikat wird in deinem Apple-Developer-Team erstellt. Sein privater Schlüssel wird auf diesem Gerät gespeichert."
+          }
+        }
+      }
+    },
+    "The local request and its stored key will be removed. Certificates already imported are kept.": {
+      "extractionState": "manual",
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Die lokale Anfrage und ihr gespeicherter Schlüssel werden entfernt. Bereits importierte Zertifikate bleiben erhalten."
+          }
+        }
+      }
+    },
+    "This certificate type requires a paid Apple Developer account.": {
+      "extractionState": "manual",
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Dieser Zertifikatstyp erfordert eine kostenpflichtige Apple-Developer-Mitgliedschaft."
+          }
+        }
+      }
+    },
+    "Use": {
+      "extractionState": "manual",
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Verwenden"
+          }
+        }
+      }
+    },
+    "Use certificate": {
+      "extractionState": "manual",
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Zertifikat verwenden"
+          }
+        }
+      }
+    },
+    "Done": {
+      "extractionState": "manual",
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Fertig"
+          }
+        }
+      }
+    },
+    "Advanced key management": {
+      "extractionState": "manual",
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Erweiterte Schlüsselverwaltung"
+          }
+        }
+      }
+    },
+    "Request": {
+      "extractionState": "manual",
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Anfrage"
+          }
+        }
+      }
+    }
+  },
+  "version": "1.0"
+}
