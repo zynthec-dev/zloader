@@ -69,7 +69,7 @@ git push https://github.com/zynthec-dev/zloader-altsource.git publish/altsource:
 
 Niemals `HEAD`, den Entwicklungsbranch, `--all` oder `--mirror` an das öffentliche
 Ziel pushen. Neue App-Releases folgen zusätzlich der Policy in
-`zloader-app/AGENTS.md`; die Migration veröffentlicht selbst nichts.
+`zloader-app/PROJECT-NOTES.md`; die Migration veröffentlicht selbst nichts.
 
 ## Migration vom 31. Oktober 2026
 

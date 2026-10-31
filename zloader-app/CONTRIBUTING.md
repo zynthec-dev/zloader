@@ -1,7 +1,7 @@
 # Working on zLoader
 
 zLoader is independently maintained by zynthec-dev. Use a development branch and
-follow [AGENTS.md](AGENTS.md) and the build instructions in [README.md](README.md).
+follow [PROJECT-NOTES.md](PROJECT-NOTES.md) and the build instructions in [README.md](README.md).
 Keep transport/signing changes separate from visual branding where practical.
 Preserve original copyright notices and open-source licenses.
 

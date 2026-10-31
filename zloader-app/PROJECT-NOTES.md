@@ -1,7 +1,10 @@
-# Agent guidelines for zLoader
+# Projektwissen
+
+> Gemeinsame Agent- und Designvorgaben: `/Users/renewittern/Workspace/AGENTS.md`.
+> Diese Datei bewahrt bestehendes Projektwissen; sie definiert kein eigenes Design oder Agent-Profil.
 
 This directory is now part of the shared repository at
-`/Users/renewittern/Workspace/Apps:Software/zloader`. Read `../AGENTS.md` first.
+`/Users/renewittern/Workspace/Apps:Software/zloader`. Read `../PROJECT-NOTES.md` first.
 Run app build commands from this directory, and repository-wide Git operations
 from the shared root. Initialize submodules from the shared root. Do not recreate
 the former checkout at `Workspace/Projekte/zloader-app`.
