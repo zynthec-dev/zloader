@@ -92,8 +92,15 @@ python3 zLoader/scripts/test-bootstrap-package.py
 ```
 
 The canonical build also rebuilds the pinned iDevice installer with the tracked
-status-acknowledgement fix. Rust 1.99.1 is installed only inside the ignored
-`.build/RustToolchain` directory when absent. Before direct simulator or tvOS
+status-acknowledgement fix. Rust 1.99.1 is installed inside the ignored
+`.build/RustToolchain` directory when absent. If the checkout path contains a
+colon, `build-unsigned.sh` builds a copy of the current working files in a
+per-project macOS user cache: Xcode dependency files and Rust library paths
+cannot represent colons. This includes uncommitted edits and creates no second
+Git checkout. Outputs and built products are copied back to the normal paths.
+Use this script for the canonical build; opening the original project directly
+in Xcode still has the toolchain's colon-path limitation.
+Before direct simulator or tvOS
 builds, resolve packages and run `prepare-patched-idevice.sh ios-simulator`,
 `tvos`, or `tvos-simulator` for that destination. Serialize these builds.
 

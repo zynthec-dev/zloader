@@ -28,6 +28,10 @@ python3 -m unittest discover -s tests -v
 ```
 
 Die GitHub-Actions am Repository-Stamm berücksichtigen diese Arbeitsordner.
+Der kanonische App-Build unterstützt den Doppelpunkt in `Apps:Software`:
+`build-unsigned.sh` baut die aktuellen Arbeitsdateien in einem projektspezifischen
+macOS-Benutzercache und kopiert die Ergebnisse zurück. Direkte Xcode-Builds am
+Originalpfad unterliegen weiterhin der Doppelpunkt-Beschränkung der Toolchain.
 Die Workflows innerhalb von `zloader-altsource/.github/` gehören zum öffentlichen
 Veröffentlichungsziel und werden dort weiterhin verwendet.
 
@@ -74,6 +78,7 @@ Die bisherigen Git-Historien wurden ohne Umschreiben importiert:
 - App: `234a42f0` auf `zloader-development`, einschließlich des lokalen Commits für 0.8.6.
 - AltSource: `81456b1`, einschließlich der beiden zuvor lokal fehlenden Katalog-Commits.
 - App-Branches, Tags, Reflogs und der zusätzliche Entwicklungs-Worktree bleiben erhalten.
+- Historische Branches behalten ihre ursprüngliche Dateistruktur. Neue Entwicklungsbranches vom migrierten `zloader-development` abzweigen.
 - AltSource-Branches und Remote-Refs liegen unter `refs/migration/altsource/`; Tags sind unter `altsource/` namensräumlich getrennt.
 - Die originale AltSource-Git-Verwaltung und der ursprüngliche App-Index liegen als lokale Rückfallsicherung unter `.git/migration-backups/`. Sie gehören nicht zum veröffentlichten Inhalt.
 - Die vorhandene Übersetzungsänderung bleibt uncommittet. Ihre SHA-256-Prüfsumme wurde vor und nach dem Umzug verglichen.

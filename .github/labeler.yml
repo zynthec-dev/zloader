@@ -1,0 +1,168 @@
+# Documentation - https://github.com/actions/labeler
+
+# General Labels
+'Build | Project System':
+  - changed-files:
+    - any-glob-to-any-file:
+      - '.github/*'
+      - '.github/**/*'
+      - 'zloader-app/*.xcconfig'
+      - 'zloader-app/**/*.xcconfig'
+      - 'zloader-app/*.xcodeproj/*'
+      - 'zloader-app/**/*.xcodeproj/*'
+      - 'zloader-app/Makefile'
+      - 'zloader-app/.editorconfig'
+      - 'zloader-app/.gitignore'
+
+'Dependencies':
+  - changed-files:
+    - any-glob-to-any-file:
+      - 'zloader-app/Dependencies/*'
+      - 'zloader-app/Dependencies/**/*'
+      - '.gitmodules'
+
+'Documentation':
+  - changed-files:
+    - any-glob-to-any-file:
+      - '*.md'
+      - '**/*.md'
+      - 'zloader-app/LICENSE'
+
+'GUI/UIKit':
+  - changed-files:
+    - any-glob-to-any-file:
+      - 'zloader-app/zLoader/Features/Views/*'
+      - 'zloader-app/zLoader/Features/Views/**/*'
+      - 'zloader-app/zLoader/App/App Detail/*.swift'
+      - 'zloader-app/zLoader/App/Browse/*.swift'
+      - 'zloader-app/zLoader/App/Authentication/*.swift'
+      - 'zloader-app/zLoader/App/My Apps/*.swift'
+      - 'zloader-app/zLoader/App/News/*.swift'
+      - 'zloader-app/zLoader/App/Settings/*.swift'
+      - 'zloader-app/zLoader/App/Sources/*.swift'
+
+'Resources | Assets':
+  - changed-files:
+    - any-glob-to-any-file:
+      - 'zloader-app/zLoader/App/Resources/*'
+      - 'zloader-app/zLoader/App/Resources/**/*'
+      - 'zloader-app/zLoader/App/Base.lproj/*'
+      - 'zloader-app/zLoader/App/Base.lproj/**/*'
+      - 'zloader-app/zLoader/Backup/Assets.xcassets/*'
+      - 'zloader-app/zLoader/Backup/Assets.xcassets/**/*'
+      - 'zloader-app/zLoader/Widget/Assets.xcassets/*'
+      - 'zloader-app/zLoader/Widget/Assets.xcassets/**/*'
+
+# Tools / Features
+'Backup':
+  - changed-files:
+    - any-glob-to-any-file:
+      - 'zloader-app/zLoader/Backup/*'
+      - 'zloader-app/zLoader/Backup/**/*'
+
+'Widget':
+  - changed-files:
+    - any-glob-to-any-file:
+      - 'zloader-app/zLoader/Widget/*'
+      - 'zloader-app/zLoader/Widget/**/*'
+
+'App Detail':
+  - changed-files:
+    - any-glob-to-any-file:
+      - 'zloader-app/zLoader/App/App Detail/*'
+      - 'zloader-app/zLoader/App/App Detail/**/*'
+
+'App IDs':
+  - changed-files:
+    - any-glob-to-any-file:
+      - 'zloader-app/zLoader/App/App IDs/*'
+      - 'zloader-app/zLoader/App/App IDs/**/*'
+
+'Authentication':
+  - changed-files:
+    - any-glob-to-any-file:
+      - 'zloader-app/zLoader/App/Authentication/*'
+      - 'zloader-app/zLoader/App/Authentication/**/*'
+
+'Browse':
+  - changed-files:
+    - any-glob-to-any-file:
+      - 'zloader-app/zLoader/App/Browse/*'
+      - 'zloader-app/zLoader/App/Browse/**/*'
+
+'Managing Apps':
+  - changed-files:
+    - any-glob-to-any-file:
+      - 'zloader-app/zLoader/App/Managing Apps/*'
+      - 'zloader-app/zLoader/App/Managing Apps/**/*'
+
+'My Apps':
+  - changed-files:
+    - any-glob-to-any-file:
+      - 'zloader-app/zLoader/App/My Apps/*'
+      - 'zloader-app/zLoader/App/My Apps/**/*'
+
+'News':
+  - changed-files:
+    - any-glob-to-any-file:
+      - 'zloader-app/zLoader/App/News/*'
+      - 'zloader-app/zLoader/App/News/**/*'
+
+'Settings':
+  - changed-files:
+    - any-glob-to-any-file:
+      - 'zloader-app/zLoader/App/Settings/*'
+      - 'zloader-app/zLoader/App/Settings/**/*'
+
+'Sources':
+  - changed-files:
+    - any-glob-to-any-file:
+      - 'zloader-app/zLoader/App/Sources/*'
+      - 'zloader-app/zLoader/App/Sources/**/*'
+
+# Core Components
+'Core':
+  - changed-files:
+    - any-glob-to-any-file:
+      - 'zloader-app/zLoaderCore/*'
+      - 'zloader-app/zLoaderCore/**/*'
+
+'Shared':
+  - changed-files:
+    - any-glob-to-any-file:
+      - 'zloader-app/Shared/*'
+      - 'zloader-app/Shared/**/*'
+
+'zLoader':
+  - changed-files:
+    - any-glob-to-any-file:
+      - 'zloader-app/zLoader/Features/*'
+      - 'zloader-app/zLoader/Features/**/*'
+
+# Other Core Components
+'Operations':
+  - changed-files:
+    - any-glob-to-any-file:
+      - 'zloader-app/zLoader/App/Operations/*'
+      - 'zloader-app/zLoader/App/Operations/**/*'
+
+'Intents':
+  - changed-files:
+    - any-glob-to-any-file:
+      - 'zloader-app/zLoader/App/Intents/*'
+      - 'zloader-app/zLoader/App/Intents/**/*'
+
+'Permissions':
+  - changed-files:
+    - any-glob-to-any-file:
+      - 'zloader-app/zLoader/App/Permissions/*'
+      - 'zloader-app/zLoader/App/Permissions/**/*'
+
+'App Lifecycle':
+  - changed-files:
+    - any-glob-to-any-file:
+      - 'zloader-app/zLoader/App/AppDelegate.swift'
+      - 'zloader-app/zLoader/App/SceneDelegate.swift'
+      - 'zloader-app/zLoader/App/TabBarController.swift'
+      - 'zloader-app/zLoader/App/LaunchViewController.swift'
+      - 'zloader-app/zLoader/App/AppConstants.swift'

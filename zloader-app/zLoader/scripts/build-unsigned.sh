@@ -2,6 +2,12 @@
 # Reviewable build artifact, not an entitlement-authorized installable release.
 set -eu
 cd "$(dirname "$0")/../.."
+case "$PWD" in
+    *:*)
+        # Xcode/Swift dependency files cannot escape a colon in source paths.
+        exec python3 zLoader/scripts/build-in-cache.py
+        ;;
+esac
 sh zLoader/scripts/apply-dependency-patches.sh
 # Resolve first so dependency patches also apply on a clean checkout.
 xcodebuild -resolvePackageDependencies -project zLoader.xcodeproj -scheme zLoader \
