@@ -2,12 +2,12 @@
 # Local modifications are reproduced by tracked zLoader/Patches; keep gitlink changes visible.
 
 [submodule "Dependencies/minimuxer"]
-    path = Dependencies/minimuxer
+    path = zloader-app/Dependencies/minimuxer
     url = https://github.com/SideStore/minimuxer
     branch = develop
     ignore = dirty
 [submodule "Dependencies/SideSign"]
-	path = Dependencies/SideSign
+	path = zloader-app/Dependencies/SideSign
 	url = https://github.com/SideStore/SideSign
 	branch = main
 	ignore = dirty
