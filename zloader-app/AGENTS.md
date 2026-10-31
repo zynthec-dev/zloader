@@ -1,5 +1,11 @@
 # Agent guidelines for zLoader
 
+This directory is now part of the shared repository at
+`/Users/renewittern/Workspace/Apps:Software/zloader`. Read `../AGENTS.md` first.
+Run app build commands from this directory, and repository-wide Git operations
+from the shared root. Initialize submodules from the shared root. Do not recreate
+the former checkout at `Workspace/Projekte/zloader-app`.
+
 This is the user's independent private zLoader clone, not a SideStore contribution.
 Original authors and licenses must remain credited. If a future task targets an
 upstream contribution, follow SideStore's original participation rules from the

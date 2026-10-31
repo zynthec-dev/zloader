@@ -1,0 +1,36 @@
+name: Validate AltSource
+on:
+  push:
+    paths:
+      - 'zloader-altsource/**'
+      - '.github/workflows/source-validation.yml'
+  pull_request:
+    paths:
+      - 'zloader-altsource/**'
+      - '.github/workflows/source-validation.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: zloader-altsource
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Download catalogued public assets
+        run: python3 scripts/release_pipeline.py download
+      - name: Build and validate
+        run: |
+          python3 scripts/build.py
+          python3 -m unittest discover -s tests -v
+          node tests/cloudflare-routing.mjs
+          node tests/admin-auth.mjs
+          node tests/ipa-upload.mjs

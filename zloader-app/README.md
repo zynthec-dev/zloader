@@ -43,12 +43,16 @@ browser callbacks, including the remaining device validation.
 
 ## Build
 
+This app is in the `zloader-app/` directory of the shared private zLoader
+repository. Initialize submodules from the repository root, then change into
+`zloader-app/` for the commands below.
+
 Requires macOS, Xcode and the pinned submodules. The independent certificate-export
 checks require OpenSSL 3 on PATH (including its valid openssl.cnf); the system
 LibreSSL does not provide the same Unicode PKCS12 CLI behavior:
 
 ```sh
-git submodule update --init --recursive
+git -C .. submodule update --init --recursive
 sh zLoader/scripts/apply-dependency-patches.sh
 sh zLoader/scripts/test-transport.sh
 sh zLoader/scripts/test-transport-status.sh

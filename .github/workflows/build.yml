@@ -6,6 +6,9 @@ permissions:
 jobs:
   build:
     runs-on: macos-latest
+    defaults:
+      run:
+        working-directory: zloader-app
     steps:
       - uses: actions/checkout@v4
         with:
@@ -21,4 +24,4 @@ jobs:
       - uses: actions/upload-artifact@v4
         with:
           name: zLoader-IPAs
-          path: outputs/*.ipa
+          path: zloader-app/outputs/*.ipa
