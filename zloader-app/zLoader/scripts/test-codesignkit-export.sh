@@ -1,6 +1,9 @@
 #!/bin/sh
 set -eu
 cd "$(dirname "$0")/../.."
+case "$PWD" in
+    *:*) exec python3 zLoader/scripts/build-in-cache.py sh zLoader/scripts/test-codesignkit-export.sh ;;
+esac
 sh zLoader/scripts/apply-dependency-patches.sh
 # Uses the actual pinned checkouts from a resolved Xcode build; no new dependencies.
 root=$(pwd)

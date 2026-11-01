@@ -3,6 +3,7 @@ from pathlib import Path
 import hashlib
 import json
 import subprocess
+import sys
 
 
 source = Path(__file__).resolve().parents[2]
@@ -35,7 +36,11 @@ if state.exists():
     state.write_text(state.read_text().replace(str(source), str(workspace)))
 
 print(f"Building current sources in {workspace}", flush=True)
-subprocess.run(["sh", "zLoader/scripts/build-unsigned.sh"], cwd=workspace, check=True)
+command = sys.argv[1:] or ["sh", "zLoader/scripts/build-unsigned.sh"]
+subprocess.run(command, cwd=workspace, check=True)
+if sys.argv[1:]:
+    # Test-specific products stay in the cache; do not copy stale app products.
+    raise SystemExit(0)
 
 # Keep the usual local output and packaging locations available to callers.
 for relative in ("outputs", ".build/Device/Build/Products", ".build/PatchedIdevice"):

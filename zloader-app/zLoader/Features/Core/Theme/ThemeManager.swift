@@ -10,26 +10,6 @@ import UIKit
 import Combine
 import SwiftUI
 
-public struct ThemePreset: Identifiable, Equatable {
-    public let id: String
-    public let name: String
-    public let hex: String
-    
-    public var color: UIColor {
-        id == "classic" ? .defaultAltPrimary : (UIColor(hex: hex) ?? .defaultAltPrimary)
-    }
-    
-    public static let presets: [ThemePreset] = [
-        ThemePreset(id: "classic", name: "zLoader Mint", hex: "#147D60"),
-        ThemePreset(id: "neonViolet", name: "Neon Violet", hex: "#8B5CF6"),
-        ThemePreset(id: "sunsetCrimson", name: "Sunset Crimson", hex: "#EF4444"),
-        ThemePreset(id: "sapphireBlue", name: "Sapphire Blue", hex: "#3B82F6"),
-        ThemePreset(id: "cyberpunkGold", name: "Cyberpunk Gold", hex: "#F59E0B"),
-        ThemePreset(id: "emeraldMint", name: "Emerald Mint", hex: "#10B981"),
-        ThemePreset(id: "electricPink", name: "Electric Pink", hex: "#EC4899")
-    ]
-}
-
 public final class ThemeManager: ObservableObject {
     public static let shared = ThemeManager()
     public static let themeDidChangeNotification = Notification.Name("ZLoaderThemeDidChangeNotification")
@@ -67,13 +47,8 @@ public final class ThemeManager: ObservableObject {
             }
         }
 
-        if let hex = UserDefaults.standard.string(forKey: Self.userDefaultsKey),
-           let color = UIColor(hex: hex) {
-            // Older versions persisted one resolved side of the dynamic mint.
-            self.primaryColor = ["#207C65", "#74DDB5", "#147D60", "#57D5A2"].contains(hex.uppercased()) ? .defaultAltPrimary : color
-        } else {
-            self.primaryColor = .defaultAltPrimary
-        }
+        self.primaryColor = .defaultAltPrimary
+        UserDefaults.standard.removeObject(forKey: Self.userDefaultsKey)
     }
 
     public func resetToDefault() {
@@ -163,15 +138,13 @@ struct ZLoaderThemedRoot<Content: View>: View {
             .accentColor(Color(uiColor: theme.primaryColor))
             .environment(\.locale, AppLanguage.launchLocale)
             .environment(\.zLoaderUsesGlass, usesGlass)
-            .environment(\.defaultMinListRowHeight, ZLoaderSettingsStyle.minimumRowHeight)
             .environment(\.settingsEntryIconsVisible, true)
             .labelStyle(.titleAndIcon)
             .tint(Color(uiColor: .altPrimary))
-            .font(.body)
             #if os(tvOS)
             .listStyle(.grouped)
             #else
-            .listStyle(.plain)
+            .listStyle(.insetGrouped)
             #endif
             .formStyle(.grouped)
             .preferredColorScheme(theme.appearance.colorScheme)
@@ -263,7 +236,7 @@ extension ThemeManager {
             table.backgroundColor = usesZynthecPalette ? .clear : .settingsBackground
             if table.delegate is SettingsViewController {
                 // The storyboard table draws its own inset group separators.
-                table.separatorStyle = .none
+                table.separatorStyle = .singleLine
             } else if table.style != .plain {
                 table.separatorStyle = .singleLine
             }
@@ -404,21 +377,9 @@ extension View {
     func zLoaderSettingsPage() -> some View {
         self
             .environment(\.zLoaderUsesGlass, false)
-            .environment(\.defaultMinListRowHeight, ZLoaderSettingsStyle.minimumRowHeight)
             .environment(\.settingsEntryIconsVisible, true)
             .labelStyle(.titleAndIcon)
             .tint(Color(uiColor: .altPrimary))
-            .font(.body)
-            #if os(tvOS)
-            .listStyle(.grouped)
-            #else
-            .listStyle(.plain)
-            #endif
-            .listRowSpacing(ZLoaderSettingsStyle.rowSpacing)
-            .listSectionSpacing(20)
-            .listSectionSeparator(.hidden)
-            .contentMargins(.horizontal, ZLoaderSettingsStyle.horizontalInset, for: .scrollContent)
-            .scrollContentBackground(.hidden)
-            .background(Color(uiColor: .settingsBackground).ignoresSafeArea())
+            .listStyle(.insetGrouped)
     }
 }

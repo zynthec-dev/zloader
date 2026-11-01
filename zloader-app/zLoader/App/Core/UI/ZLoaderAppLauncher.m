@@ -1,4 +1,7 @@
 #import "ZLoaderAppLauncher.h"
+#if !ZLOADER_APP_LAUNCH_TESTING
+#import <UIKit/UIKit.h>
+#endif
 
 // The same runtime workspace interface is already used by zLoaderBackup.
 @interface NSObject (ZLoaderNativeLaunch)
@@ -7,10 +10,20 @@
                        usingConfiguration:(id)configuration
                         completionHandler:(void (^)(BOOL, NSError * _Nullable))completionHandler;
 - (BOOL)openApplicationWithBundleID:(NSString *)bundleIdentifier;
+#if ZLOADER_APP_LAUNCH_TESTING
++ (id)sharedApplication;
+- (void)openURL:(NSURL *)url options:(NSDictionary *)options completionHandler:(void (^)(BOOL))completion;
+#endif
 @end
 
 @implementation ZLoaderAppLauncher
 + (void)openApplicationWithBundleIdentifier:(NSString *)bundleIdentifier
+                        completionHandler:(void (^)(BOOL, NSError * _Nullable))completionHandler {
+    [self openApplicationWithBundleIdentifier:bundleIdentifier registeredLaunchURL:nil completionHandler:completionHandler];
+}
+
++ (void)openApplicationWithBundleIdentifier:(NSString *)bundleIdentifier
+                       registeredLaunchURL:(NSURL *)launchURL
                         completionHandler:(void (^)(BOOL, NSError * _Nullable))completionHandler {
     NSCharacterSet *invalid = [[NSCharacterSet characterSetWithCharactersInString:
         @"abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789.-"] invertedSet];
@@ -20,6 +33,28 @@
         }]);
         return;
     }
+    if (launchURL && (![launchURL.scheme.lowercaseString isEqualToString:[@"zloader-" stringByAppendingString:bundleIdentifier].lowercaseString]
+                      || launchURL.host.length || launchURL.path.length || launchURL.query || launchURL.fragment)) {
+        completionHandler(NO, [NSError errorWithDomain:@"zLoader.AppLaunch" code:1 userInfo:@{
+            NSLocalizedDescriptionKey: @"The launch URL does not match the installed app."
+        }]);
+        return;
+    }
+    void (^finish)(BOOL, NSError *) = ^(BOOL success, NSError *error) {
+        if (success || !launchURL) { completionHandler(success, error); return; }
+        void (^openRegisteredURL)(void) = ^{
+#if ZLOADER_APP_LAUNCH_TESTING
+            id application = [NSClassFromString(@"ZLoaderTestApplication") sharedApplication];
+#else
+            UIApplication *application = UIApplication.sharedApplication;
+#endif
+            [application openURL:launchURL options:@{} completionHandler:^(BOOL opened) {
+                completionHandler(opened, opened ? nil : error);
+            }];
+        };
+        if (NSThread.isMainThread) { openRegisteredURL(); }
+        else { dispatch_async(dispatch_get_main_queue(), openRegisteredURL); }
+    };
 #if ZLOADER_APP_LAUNCH_TESTING
     Class workspaceClass = NSClassFromString(@"ZLoaderTestApplicationWorkspace");
     Class configurationClass = NSClassFromString(@"ZLoaderTestOpenConfiguration");
@@ -28,22 +63,23 @@
     Class configurationClass = NSClassFromString(@"_LSOpenConfiguration");
 #endif
     if (!workspaceClass || ![workspaceClass respondsToSelector:@selector(defaultWorkspace)]) {
-        completionHandler(NO, [NSError errorWithDomain:@"zLoader.AppLaunch" code:2 userInfo:@{
+        finish(NO, [NSError errorWithDomain:@"zLoader.AppLaunch" code:2 userInfo:@{
             NSLocalizedDescriptionKey: @"Direct app launch is unavailable on this system."
         }]);
         return;
     }
     id workspace = [workspaceClass defaultWorkspace];
     if (configurationClass && [workspace respondsToSelector:@selector(openApplicationWithBundleIdentifier:usingConfiguration:completionHandler:)]) {
-        // Deliberately no __PayloadURL or URL fallback. An unknown deep link can
-        // cause the target app to open Safari while handling its launch URL.
+        // Native launch delivers no deep link. On denial, only the exact
+        // scheme installed by zLoader may be used; never a web URL or the
+        // first arbitrary scheme declared by a third-party application.
         [workspace openApplicationWithBundleIdentifier:bundleIdentifier
                                    usingConfiguration:[[configurationClass alloc] init]
-                                    completionHandler:completionHandler];
+                                    completionHandler:finish];
     } else if ([workspace respondsToSelector:@selector(openApplicationWithBundleID:)]) {
-        completionHandler([workspace openApplicationWithBundleID:bundleIdentifier], nil);
+        finish([workspace openApplicationWithBundleID:bundleIdentifier], nil);
     } else {
-        completionHandler(NO, [NSError errorWithDomain:@"zLoader.AppLaunch" code:2 userInfo:@{
+        finish(NO, [NSError errorWithDomain:@"zLoader.AppLaunch" code:2 userInfo:@{
             NSLocalizedDescriptionKey: @"Direct app launch is unavailable on this system."
         }]);
     }

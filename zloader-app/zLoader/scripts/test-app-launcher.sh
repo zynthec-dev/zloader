@@ -6,6 +6,6 @@ DEVELOPER_DIR=${DEVELOPER_DIR:-/Applications/Xcode.app/Contents/Developer} xcrun
     -fobjc-arc -fblocks -Wall -Wextra -DZLOADER_APP_LAUNCH_TESTING=1 \
     -framework Foundation zLoader/App/Core/UI/ZLoaderAppLauncher.m zLoader/Tests/AppLauncherTests.m \
     -o .build/AppLauncher/tests
-for mode in modern-success modern-failure legacy unavailable invalid; do
+for mode in modern-success modern-failure legacy unavailable invalid fallback-success fallback-failure fallback-invalid; do
     .build/AppLauncher/tests "$mode"
 done

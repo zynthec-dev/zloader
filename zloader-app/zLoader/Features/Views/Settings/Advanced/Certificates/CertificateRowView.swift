@@ -66,7 +66,7 @@ struct CertificateRowView: View {
                     if isActive { Label { Text("Active", tableName: "CertificatesUI") } icon: { Image(systemName: "checkmark") } }
                     else { Text("Use", tableName: "CertificatesUI") }
                 }
-                .buttonStyle(ZynthecActionButtonStyle())
+                .buttonStyle(.borderedProminent)
                 .accessibilityLabel(Text(isActive ? "Deactivate certificate" : "Use certificate", tableName: "CertificatesUI"))
                 .accessibilityIdentifier("certificate-use-" + cert.serialNumber)
                 .disabled(viewModel.isLoading)

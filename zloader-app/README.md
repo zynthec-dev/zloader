@@ -171,3 +171,5 @@ Imported signing identities, account-free install/refresh and source IPA downloa
 0.7.64 removes automatic signed-IPA exports, keeps Refresh Cache in Developer Options, and adds installer IPA icons: [review and validation](docs/zloader/REVIEW-0.7.64.md).
 
 0.7.65 integrates Refresh Cache into the developer settings list and unifies Settings destinations: [coverage and validation](docs/zloader/SETTINGS-STYLE-0.7.65.md).
+
+- [Settings organization and app launch, 0.8.7](docs/zloader/SETTINGS-AND-LAUNCH-0.8.7.md)

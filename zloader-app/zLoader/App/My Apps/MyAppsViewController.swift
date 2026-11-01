@@ -1417,13 +1417,16 @@ private extension MyAppsViewController
 {
     func open(_ installedApp: InstalledApp, usesAutomaticJIT: Bool = true)
     {
+        let bundleIdentifier = installedApp.resignedBundleIdentifier
+        // Selecting the current host already leaves the requested app in front.
+        guard bundleIdentifier != Bundle.main.bundleIdentifier else { return }
         if usesAutomaticJIT && UserDefaults.standard.automaticJITEnabled(for: installedApp.bundleIdentifier) {
             self.enableJIT(for: installedApp, launchBeforeAttaching: true)
             return
         }
-        let bundleIdentifier = installedApp.resignedBundleIdentifier
         let appName = installedApp.name
-        ZLoaderAppLauncher.openApplication(withBundleIdentifier: bundleIdentifier) { [weak self] success, error in
+        let launchURL = InstalledApp.openAppURL(targetBundleIdentifier: bundleIdentifier)
+        ZLoaderAppLauncher.openApplication(withBundleIdentifier: bundleIdentifier, registeredLaunch: launchURL) { [weak self] success, error in
             DispatchQueue.main.async {
                 guard let self, !success else { return }
                 ToastView(error: error ?? OperationError.openAppFailed(name: appName), opensLog: true).show(in: self)

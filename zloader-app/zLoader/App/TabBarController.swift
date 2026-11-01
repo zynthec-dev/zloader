@@ -42,6 +42,7 @@ final class TabBarController: UITabBarController
     {
         super.viewDidLoad()
         debugLog("[TabBarController] viewDidLoad()")
+        tabBar.tintColor = .altPrimary
         
         let tabs: [(String, String, String)] = [
             ("News", "text.bubble", "text.bubble.fill"),

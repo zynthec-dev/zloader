@@ -14,20 +14,7 @@ enum ZLoaderSettingsStyle {
 }
 
 extension View {
-    func zLoaderSettingsRows() -> some View {
-        self
-            .listRowInsets(
-                EdgeInsets(
-                    top: ZLoaderSettingsStyle.rowPadding,
-                    leading: ZLoaderSettingsStyle.rowPadding,
-                    bottom: ZLoaderSettingsStyle.rowPadding,
-                    trailing: ZLoaderSettingsStyle.rowPadding)
-            )
-            .listRowSeparator(.hidden)
-            .listRowBackground(
-                RoundedRectangle(cornerRadius: ZLoaderSettingsStyle.cardRadius, style: .continuous)
-                    .fill(Color(uiColor: .settingsCard)))
-    }
+    func zLoaderSettingsRows() -> some View { self }
 
     /// For explanatory cards in settings screens that contain scrollable previews.
     func zLoaderSettingsCard() -> some View {
@@ -43,7 +30,7 @@ extension View {
     static func apply(to table: UITableView) {
         table.tag = tableTag
         table.backgroundColor = .settingsBackground
-        table.separatorStyle = .none
+        table.separatorStyle = .singleLine
         table.rowHeight = UITableView.automaticDimension
         table.estimatedRowHeight = ZLoaderSettingsStyle.minimumRowHeight + ZLoaderSettingsStyle.rowSpacing
     }
@@ -69,12 +56,7 @@ extension View {
     }
 
     static func background(for cell: UITableViewCell) -> UIBackgroundConfiguration {
-        var background = UIBackgroundConfiguration.listPlainCell()
-        background.backgroundColor = cell.isHighlighted || cell.isSelected ? .settingsHighlighted : .settingsCard
-        background.cornerRadius = ZLoaderSettingsStyle.cardRadius
-        background.backgroundInsets = NSDirectionalEdgeInsets(
-            top: 4, leading: ZLoaderSettingsStyle.horizontalInset, bottom: 4,
-            trailing: ZLoaderSettingsStyle.horizontalInset)
+        let background = UIBackgroundConfiguration.listCell()
         return background
     }
 }

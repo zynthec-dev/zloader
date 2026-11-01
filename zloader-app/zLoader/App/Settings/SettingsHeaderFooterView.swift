@@ -16,6 +16,40 @@ final class SettingsHeaderFooterView: UITableViewHeaderFooterView
     @IBOutlet var button: UIButton!
         
     @IBOutlet private var stackView: UIStackView!
+    private let disclosureButton = UIButton(type: .system)
+    private var disclosureAction: UIAction?
+
+    func resetDisclosure() {
+        disclosureButton.isHidden = true
+        if let disclosureAction { disclosureButton.removeAction(disclosureAction, for: .primaryActionTriggered) }
+        disclosureAction = nil
+    }
+
+    func configureDisclosure(identifier: String, collapsed: Bool, action: @escaping () -> Void) {
+        if disclosureButton.superview == nil, let row = primaryLabel.superview as? UIStackView {
+            row.insertArrangedSubview(disclosureButton, at: 0)
+        }
+        var configuration = UIButton.Configuration.plain()
+        configuration.title = primaryLabel.text
+        configuration.image = UIImage(systemName: collapsed ? "chevron.forward" : "chevron.down")
+        configuration.imagePlacement = .trailing
+        configuration.titleLineBreakMode = .byWordWrapping
+        configuration.baseForegroundColor = .secondaryLabel
+        configuration.titleTextAttributesTransformer = UIConfigurationTextAttributesTransformer { attributes in
+            var attributes = attributes
+            attributes.font = .preferredFont(forTextStyle: .footnote)
+            return attributes
+        }
+        disclosureButton.configuration = configuration
+        disclosureButton.contentHorizontalAlignment = .leading
+        disclosureButton.accessibilityIdentifier = identifier
+        disclosureButton.accessibilityValue = String(localized: collapsed ? "Collapsed" : "Expanded", table: "SettingsLayout")
+        disclosureButton.isHidden = false
+        primaryLabel.isHidden = true
+        let handler = UIAction { _ in action() }
+        disclosureAction = handler
+        disclosureButton.addAction(handler, for: .primaryActionTriggered)
+    }
     override init(reuseIdentifier: String?)
     {
         super.init(reuseIdentifier: reuseIdentifier)

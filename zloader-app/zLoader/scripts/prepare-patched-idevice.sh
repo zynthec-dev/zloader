@@ -15,9 +15,10 @@ if [ ! -x "$CARGO_HOME/bin/cargo" ]; then
     curl --fail --silent --show-error --location https://sh.rustup.rs -o "$root/.build/RustToolchain/rustup-init.sh"
     sh "$root/.build/RustToolchain/rustup-init.sh" -y --no-modify-path --profile minimal --default-toolchain "$rust_version"
 fi
-case "$(rustc --version)" in
+export RUSTC="$CARGO_HOME/bin/rustc"
+case "$("$RUSTC" --version)" in
     "rustc $rust_version "*) ;;
-    *) rustup toolchain install "$rust_version" --profile minimal; export RUSTUP_TOOLCHAIN="$rust_version" ;;
+    *) "$CARGO_HOME/bin/rustup" toolchain install "$rust_version" --profile minimal; export RUSTUP_TOOLCHAIN="$rust_version" ;;
 esac
 # Corresponding-source archives already contain this library's patched source.
 source="$root/VendorSources/BinaryTargets/idevice"
@@ -37,7 +38,7 @@ if ! git -C "$source" apply --reverse --check "$patch" 2>/dev/null; then
 fi
 mode=${1:-ios}
 if [ "$mode" = test ]; then
-    cargo test --manifest-path "$source/Cargo.toml" -p idevice --locked --no-default-features --features installation_proxy,ring zloader_installation_tests
+    "$CARGO_HOME/bin/cargo" test --manifest-path "$source/Cargo.toml" -p idevice --locked --no-default-features --features installation_proxy,ring zloader_installation_tests
     exit 0
 fi
 case "$mode" in
@@ -48,7 +49,7 @@ case "$mode" in
     *) echo "Unsupported installer build mode: $mode" >&2; exit 1 ;;
 esac
 rustup target add "$target"
-cargo build --manifest-path "$source/Cargo.toml" -p idevice-ffi --release --locked --target "$target" --features obfuscate
+"$CARGO_HOME/bin/cargo" build --manifest-path "$source/Cargo.toml" -p idevice-ffi --release --locked --target "$target" --features obfuscate
 artifact="$root/.build/SourcePackages/artifacts/devicegateway/IDevice/IDevice.xcframework/$slice/$library"
 test -f "$artifact"
 built="$source/target/$target/release/libidevice_ffi.a"

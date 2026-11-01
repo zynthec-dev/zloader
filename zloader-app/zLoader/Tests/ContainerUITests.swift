@@ -239,7 +239,7 @@ final class ContainerUITests: XCTestCase {
     func test008SettingsOrderAndSingleBackNavigation() throws {
         // Exercise settings on an onboarded app independently of device pairing.
         app.terminate()
-        app.launchArguments += ["-hasCompletedOnboarding", "YES"]
+        app.launchArguments += ["-hasCompletedOnboarding", "YES", "-zLoader.collapsedSettingsSections", "()"]
         XCUIDevice.shared.orientation = .portrait
         app.launch()
         // The unfolded simulator exposes the vertical tab strip as buttons,
@@ -257,8 +257,8 @@ final class ContainerUITests: XCTestCase {
         XCTAssertTrue(developer.exists && container.isHittable && customizations.exists)
         XCTAssertEqual(app.cells.matching(identifier: "settings-container").count, 1)
         XCTAssertEqual(app.cells.matching(identifier: "settings-user-customizations").count, 1)
-        XCTAssertLessThan(developer.frame.midY, container.frame.midY)
-        XCTAssertLessThan(container.frame.midY, customizations.frame.midY)
+        XCTAssertLessThan(customizations.frame.midY, container.frame.midY)
+        XCTAssertLessThan(container.frame.midY, developer.frame.midY)
         attach("settings084-menu-order")
 
         container.tap()
@@ -289,9 +289,78 @@ final class ContainerUITests: XCTestCase {
         customizations.tap()
         XCTAssertEqual(app.navigationBars.count, 1)
         XCTAssertEqual(app.navigationBars.buttons.count, 1)
-        attach("settings084-user-customizations")
+        XCTAssertFalse(app.buttons["Appearance"].exists)
+        XCTAssertFalse(app.buttons["Darstellung"].exists)
+        attach("settings087-user-customizations")
         app.navigationBars.buttons.firstMatch.tap()
         XCTAssertTrue(container.waitForExistence(timeout: 5))
+    }
+
+    func test012CollapsibleSettingsAndAppearance() throws {
+        app.terminate()
+        app.launchArguments += ["-hasCompletedOnboarding", "YES", "-zLoader.collapsedSettingsSections", "()", "-zLoader.appearance", "light"]
+        app.launch()
+        app.buttons["Einstellungen"].firstMatch.tap()
+        let appearance = app.cells["settings-appearance"]
+        for _ in 0..<8 where !appearance.isHittable { app.swipeUp() }
+        XCTAssertTrue(appearance.isHittable)
+        appearance.tap()
+        XCTAssertTrue(app.buttons["appearance-mode"].waitForExistence(timeout: 10))
+        XCTAssertFalse(app.otherElements["Accent Color"].exists)
+        attach("settings087-native-appearance")
+        app.buttons["appearance-mode"].tap()
+        app.buttons["Dunkel"].tap()
+        attach("settings087-native-appearance-dark")
+        app.buttons["appearance-mode"].tap()
+        app.buttons["Automatisch"].tap()
+        app.navigationBars.buttons.firstMatch.tap()
+        let display = app.buttons["settings-section-display"]
+        display.tap()
+        XCTAssertFalse(appearance.exists)
+        attach("settings087-display-collapsed")
+        app.terminate()
+        app.launchArguments = ["-AppleLanguages", "(de)", "-AppleLocale", "de_DE", "-hasCompletedOnboarding", "YES"]
+        app.launch()
+        app.buttons["Einstellungen"].firstMatch.tap()
+        XCTAssertTrue(display.waitForExistence(timeout: 10))
+        XCTAssertEqual(display.value as? String, "Eingeklappt")
+        XCTAssertFalse(appearance.exists)
+        display.tap()
+        XCTAssertTrue(appearance.waitForExistence(timeout: 5))
+        let advanced = app.buttons["settings-section-advancedSettings"]
+        for _ in 0..<10 where !advanced.isHittable { app.swipeUp() }
+        XCTAssertTrue(advanced.isHittable)
+        advanced.tap()
+        XCTAssertFalse(app.cells["settings-user-customizations"].exists)
+        let health = app.cells["settings-diagnostics-healthCheck"]
+        for _ in 0..<8 where !health.isHittable { app.swipeUp() }
+        XCTAssertTrue(health.isHittable)
+        attach("settings087-diagnostics-and-credits")
+        health.tap()
+        XCTAssertFalse(app.cells["settings-developer-options"].exists)
+        app.navigationBars.buttons.firstMatch.tap()
+        let credits = app.buttons["settings-section-credits"]
+        for _ in 0..<8 where !credits.isHittable { app.swipeUp() }
+        XCTAssertTrue(credits.isHittable)
+        let diagnostics = app.buttons["settings-section-diagnostics"]
+        XCTAssertLessThan(diagnostics.frame.midY, credits.frame.midY)
+        attach("settings087-credits-last")
+        // Restore all groups so the following tests have independent state.
+        for _ in 0..<10 where !advanced.isHittable { app.swipeDown() }
+        advanced.tap()
+    }
+
+    func test013SelectingCurrentAppKeepsItInForeground() throws {
+        app.terminate()
+        app.launchArguments += ["-hasCompletedOnboarding", "YES"]
+        app.launch()
+        app.buttons["Meine Apps"].firstMatch.tap()
+        let host = app.buttons.matching(NSPredicate(format: "label BEGINSWITH %@", "zLoader\n")).firstMatch
+        XCTAssertTrue(host.waitForExistence(timeout: 10))
+        host.tap()
+        XCTAssertEqual(app.state, .runningForeground)
+        XCTAssertFalse(app.staticTexts["Vorgang fehlgeschlagen"].exists)
+        attach("settings087-current-host-launch")
     }
 
     func test009OfflineSigningAndLocalizedAppActions() throws {

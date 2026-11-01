@@ -7,7 +7,7 @@ enum AppAppearance: String, CaseIterable, Identifiable {
     var id: String { rawValue }
     var title: LocalizedStringKey {
         switch self {
-        case .system: "System"
+        case .system: "Automatic"
         case .light: "Light"
         case .dark: "Dark"
         }

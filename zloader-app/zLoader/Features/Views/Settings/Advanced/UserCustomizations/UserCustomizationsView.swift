@@ -66,26 +66,6 @@ struct UserCustomizationsView: View {
 
     var body: some View {
         List {
-            // Section 0: APPEARANCE & THEMES
-            Section("Appearance") {
-
-                NavigationLink(destination: ThemePickerView()) {
-                    HStack {
-                        SettingsEntryLabel(title: "Appearance", systemImage: "paintpalette")
-                            .font(.body)
-                            .foregroundColor(.primary)
-                        Spacer()
-                        HStack(spacing: 6) {
-                            Circle()
-                                .fill(Color(uiColor: ThemeManager.shared.primaryColor))
-                                .frame(width: 14, height: 14)
-                        }
-                    }
-
-                }
-
-            }.zLoaderSettingsRows()
-
             // Section 1: ANISETTE
             Section("Anisette") {
 

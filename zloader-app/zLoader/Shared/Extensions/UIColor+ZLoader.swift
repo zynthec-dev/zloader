@@ -35,7 +35,7 @@ public extension UIColor
         return UIColor { traits in ThemeManager.shared.fieldColor.resolvedColor(with: traits) }
         #endif
     }
-    static let defaultAltPrimary = namedColor("Primary")!
+    static let defaultAltPrimary = UIColor(red: 64 / 255, green: 181 / 255, blue: 173 / 255, alpha: 1)
     static let deltaPrimary = namedColor("DeltaPrimary")
     static let clipPrimary = namedColor("ClipPrimary")
     
@@ -44,32 +44,8 @@ public extension UIColor
     static let refreshYellow = namedColor("RefreshYellow")!
     static let refreshGreen = namedColor("RefreshGreen")!
 
-    private static let lightMaterialTexture = materialTexture(dark: false)
-    private static let darkMaterialTexture = materialTexture(dark: true)
-
-    // A quiet, built-in texture gives the native glass something to refract.
-    // This does not restore user background images or add a wallpaper setting.
-    private static func materialTexture(dark: Bool) -> UIColor {
-        let renderer = UIGraphicsImageRenderer(size: CGSize(width: 128, height: 128))
-        let image = renderer.image { context in
-            let base = dark ? UIColor(white: 0.055, alpha: 1) : UIColor(white: 0.94, alpha: 1)
-            base.setFill()
-            context.fill(CGRect(x: 0, y: 0, width: 128, height: 128))
-            (dark ? UIColor.white : UIColor.black).withAlphaComponent(dark ? 0.035 : 0.022).setStroke()
-            context.cgContext.setLineWidth(0.5)
-            for coordinate in stride(from: -128, through: 256, by: 16) {
-                context.cgContext.move(to: CGPoint(x: coordinate, y: 0))
-                context.cgContext.addLine(to: CGPoint(x: coordinate + 128, y: 128))
-            }
-            context.cgContext.strokePath()
-        }
-        return UIColor(patternImage: image)
-    }
-
     static var altBackground: UIColor { settingsBackground }
-    static var settingsBackground: UIColor {
-        UIColor { $0.userInterfaceStyle == .dark ? darkMaterialTexture : lightMaterialTexture }
-    }
+    static var settingsBackground: UIColor { .systemGroupedBackground }
     static var settingsHighlighted: UIColor { .tertiarySystemGroupedBackground }
     static var settingsCard: UIColor { .secondarySystemGroupedBackground }
 

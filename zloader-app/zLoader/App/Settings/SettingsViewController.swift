@@ -35,7 +35,12 @@ extension SettingsViewController
         case betaTesting
         case advancedSettings
         case diagnostics
-        // case macDirtyCow
+        // Keep storyboard identities stable while ordering the visible sections.
+        static var allCases: [Section] {
+            [.signIn, .account, .patreon, .display, .appRefresh, .instructions,
+             .techyThings, .betaTesting, .advancedSettings, .diagnostics, .credits]
+        }
+        var displayIndex: Int { Self.allCases.firstIndex(of: self)! }
     }
     
     private enum AppRefreshRow: Int, CaseIterable
@@ -71,6 +76,7 @@ extension SettingsViewController
         case errorLog
         case storageExplorer
         case clearCache
+        static var allCases: [TechyThingsRow] { [.storageExplorer, .clearCache] }
     }
     private enum AdvancedSettingsRow: Int, CaseIterable
     {
@@ -86,9 +92,16 @@ extension SettingsViewController
         case certificateManagement  // row 9 - Certificate Management
         case backupAndRestore       // row 10 - Backup & Restore
         case signingIdentities
+        case userCustomizations
+        case containerSettings
+        case developerOptions
+        case experimentalFeatures
+        case shortcuts
 
         static var allCases: [AdvancedSettingsRow] {
-            var rows: [AdvancedSettingsRow] = [.sendFeedback, .refreshAttempts, .refreshSideJITServer, .pairingFileManagement]
+            var rows: [AdvancedSettingsRow] = [.userCustomizations]
+            if UIDevice.current.userInterfaceIdiom != .tv { rows.append(.containerSettings) }
+            rows.append(contentsOf: [.developerOptions, .refreshSideJITServer, .pairingFileManagement])
             if !UserDefaults.standard.useOnDeviceAnisette {
                 rows.append(.anisetteServers)
             }
@@ -96,8 +109,10 @@ extension SettingsViewController
                 .connectionConfig,
                 .networkDiscovery,
                 .signingIdentities,
-                .backupAndRestore
+                .backupAndRestore,
+                .shortcuts
             ])
+            if UserDefaults.standard.isDebugModeEnabled { rows.append(.experimentalFeatures) }
             return rows
         }
     }
@@ -107,26 +122,18 @@ extension SettingsViewController
         case betaTrack
     }
 
-    private enum DiagnosticsRow: Int, CaseIterable
-    {
-        case developerOptions            // row 0 - Developer Options
-        case experimentalFeatures        // row 1 - Experimental Features
-        case containerSettings
-        case userCustomizations
-
-        static var allCases: [DiagnosticsRow] {
-            var rows: [DiagnosticsRow] = []
-            if UserDefaults.standard.isDebugModeEnabled { rows.append(.developerOptions) }
-            if UIDevice.current.userInterfaceIdiom != .tv { rows.append(.containerSettings) }
-            rows.append(.userCustomizations)
-            if UserDefaults.standard.isDebugModeEnabled { rows.append(.experimentalFeatures) }
-            return rows
-        }
+    private enum DiagnosticsRow: Int, CaseIterable {
+        case healthCheck
+        case errorLog
+        case refreshAttempts
+        case sendFeedback
     }
+
 }
 
 final class SettingsViewController: UITableViewController
 {
+    private var collapsedSections: Set<Int> = Set(UserDefaults.standard.array(forKey: "zLoader.collapsedSettingsSections") as? [Int] ?? [])
     private var activeTeam: ALTTeam?
     private var accountStatus: AccountVerificationRow.Status = .completed
     private var accountVerificationTask: Task<Void, Never>?
@@ -487,7 +494,7 @@ private extension SettingsViewController
     private func updateAccountCardRowStyles()
     {
         guard self.isViewLoaded else { return }
-        let typeIndexPath = IndexPath(row: 2, section: Section.account.rawValue)
+        let typeIndexPath = IndexPath(row: 2, section: Section.account.displayIndex)
         if let typeCell = self.tableView.cellForRow(at: typeIndexPath) as? InsetGroupTableViewCell {
             typeCell.style = .middle
         }
@@ -505,6 +512,7 @@ private extension SettingsViewController
     
     private func prepare(_ settingsHeaderFooterView: SettingsHeaderFooterView, for section: Section, isHeader: Bool)
     {
+        settingsHeaderFooterView.resetDisclosure()
         settingsHeaderFooterView.primaryLabel.isHidden = !isHeader
         settingsHeaderFooterView.secondaryLabel.isHidden = isHeader
         settingsHeaderFooterView.button.isHidden = true
@@ -557,7 +565,7 @@ private extension SettingsViewController
             }
             else
             {
-                settingsHeaderFooterView.secondaryLabel.text = NSLocalizedString("Personalize your zLoader experience by choosing an alternate app icon.", comment: "")
+                settingsHeaderFooterView.secondaryLabel.text = String(localized: "Choose the appearance, language and app icon.", table: "SettingsLayout")
             }
             
             
@@ -567,7 +575,7 @@ private extension SettingsViewController
         case .techyThings:
             if isHeader
             {
-                settingsHeaderFooterView.primaryLabel.text = NSLocalizedString("TECHY THINGS", comment: "")
+                settingsHeaderFooterView.primaryLabel.text = String(localized: "Storage", table: "SettingsLayout")
             }
             else
             {
@@ -938,20 +946,32 @@ extension SettingsViewController
         return super.numberOfSections(in: tableView)
     }
     
-    override func tableView(_ tableView: UITableView, heightForRowAt indexPath: IndexPath) -> CGFloat
-    {
-        if Section.allCases[indexPath.section] == .account && indexPath.row == 5 {
-            return UITableView.automaticDimension
+    private func storyboardIndexPath(for indexPath: IndexPath) -> IndexPath {
+        let section = Section.allCases[indexPath.section]
+        var row = indexPath.row
+        switch section {
+        case .advancedSettings:
+            let item = AdvancedSettingsRow.allCases[row]
+            if item == .developerOptions || item == .experimentalFeatures {
+                return IndexPath(row: item == .developerOptions ? 0 : 1, section: Section.diagnostics.rawValue)
+            }
+            row = item.rawValue
+        case .diagnostics:
+            switch DiagnosticsRow.allCases[row] {
+            case .healthCheck: return IndexPath(row: 0, section: Section.techyThings.rawValue)
+            case .errorLog: return IndexPath(row: 1, section: Section.techyThings.rawValue)
+            case .refreshAttempts: return IndexPath(row: 1, section: Section.advancedSettings.rawValue)
+            case .sendFeedback: return IndexPath(row: 0, section: Section.advancedSettings.rawValue)
+            }
+        case .techyThings: row = TechyThingsRow.allCases[row].rawValue
+        case .appRefresh: row = AppRefreshRow.allCases[row].rawValue
+        default: break
         }
-        if Section.allCases[indexPath.section] == .account && indexPath.row < 3,
-           let cell = super.tableView(tableView, cellForRowAt: indexPath) as? InsetGroupTableViewCell {
-            return cell.valueRowHeight(for: tableView.bounds.width)
-        }
-        let body = UIFont.preferredFont(forTextStyle: .body)
-        if Section.allCases[indexPath.section] == .credits && indexPath.row > 0 {
-            return max(60, body.lineHeight + UIFont.preferredFont(forTextStyle: .footnote).lineHeight + 16)
-        }
-        return max(ZLoaderSettingsStyle.minimumRowHeight + ZLoaderSettingsStyle.rowSpacing, body.lineHeight + 40)
+        return IndexPath(row: row, section: section.rawValue)
+    }
+
+    override func tableView(_ tableView: UITableView, heightForRowAt indexPath: IndexPath) -> CGFloat {
+        UITableView.automaticDimension
     }
 
     override func tableView(_ tableView: UITableView, willDisplay cell: UITableViewCell, forRowAt indexPath: IndexPath)
@@ -972,42 +992,19 @@ extension SettingsViewController
         }
     }
 
-    override func tableView(_ tableView: UITableView, indentationLevelForRowAt indexPath: IndexPath) -> Int
-    {
-        if Section.allCases[indexPath.section] == .advancedSettings && AdvancedSettingsRow.allCases[indexPath.row] == .signingIdentities { return 0 }
-        if Section.allCases[indexPath.section] == .techyThings && indexPath.row >= TechyThingsRow.allCases.count { return 0 }
-        if Section.allCases[indexPath.section] == .diagnostics {
-            let row = DiagnosticsRow.allCases[indexPath.row]
-            if row == .containerSettings || row == .userCustomizations { return 0 }
-        }
-        if Section.allCases[indexPath.section] == .account && indexPath.row >= 3 {
-            return 0
-        }
-        let effectiveIndexPath: IndexPath
-        if Section.allCases[indexPath.section] == .advancedSettings {
-            let row = AdvancedSettingsRow.allCases[indexPath.row]
-            effectiveIndexPath = IndexPath(row: row.rawValue, section: indexPath.section)
-        } else if Section.allCases[indexPath.section] == .diagnostics {
-            effectiveIndexPath = IndexPath(row: DiagnosticsRow.allCases[indexPath.row].rawValue, section: indexPath.section)
-        } else if Section.allCases[indexPath.section] == .appRefresh {
-            effectiveIndexPath = IndexPath(row: AppRefreshRow.allCases[indexPath.row].rawValue, section: indexPath.section)
-        } else {
-            effectiveIndexPath = indexPath
-        }
-        return super.tableView(tableView, indentationLevelForRowAt: effectiveIndexPath)
-    }
-    
+    override func tableView(_ tableView: UITableView, indentationLevelForRowAt indexPath: IndexPath) -> Int { 0 }
+
     override func tableView(_ tableView: UITableView, numberOfRowsInSection section: Int) -> Int
     {
         let section = Section.allCases[section]
         switch section
         {
-        case _ where isSectionHidden(section): return 0
+        case _ where isSectionHidden(section) || collapsedSections.contains(section.rawValue): return 0
         case .signIn: return (self.activeTeam == nil) ? 1 : 0
         case .account: return (self.activeTeam == nil) ? 0 : (self.accountStatus == .completed ? 5 : 6)
-        case .display: return 1
+        case .display: return 2
         case .appRefresh: return AppRefreshRow.allCases.count
-        case .techyThings: return TechyThingsRow.allCases.count + 1
+        case .techyThings: return TechyThingsRow.allCases.count
         case .advancedSettings: return AdvancedSettingsRow.allCases.count
         case .diagnostics: return DiagnosticsRow.allCases.count
         default: return super.tableView(tableView, numberOfRowsInSection: section.rawValue)
@@ -1026,33 +1023,20 @@ extension SettingsViewController
             decorateSettingsCell(cell)
             return cell
         }
-        if Section.allCases[indexPath.section] == .diagnostics {
-            let row = DiagnosticsRow.allCases[indexPath.row]
-            if row == .containerSettings || row == .userCustomizations {
-                let cell = InsetGroupTableViewCell(style: .default, reuseIdentifier: nil)
-                cell.isSelectable = true
-                cell.textLabel?.text = row == .containerSettings ? "Container-Einstellungen" : NSLocalizedString("User Customizations", comment: "")
-                cell.accessibilityIdentifier = row == .containerSettings ? "settings-container" : "settings-user-customizations"
-                cell.textLabel?.font = .preferredFont(forTextStyle: .body)
-                cell.accessoryType = .disclosureIndicator
-                decorateSettingsCell(cell)
-                return cell
+        if Section.allCases[indexPath.section] == .display && indexPath.row == 1 {
+            return settingsNavigationCell(title: NSLocalizedString("Appearance", comment: ""), identifier: "settings-appearance")
+        }
+        if Section.allCases[indexPath.section] == .advancedSettings {
+            switch AdvancedSettingsRow.allCases[indexPath.row] {
+            case .userCustomizations: return settingsNavigationCell(title: NSLocalizedString("User Customizations", comment: ""), identifier: "settings-user-customizations")
+            case .containerSettings: return settingsNavigationCell(title: String(localized: "Container Settings", table: "SettingsLayout"), identifier: "settings-container")
+            case .shortcuts: return settingsNavigationCell(title: NSLocalizedString("Shortcuts", comment: ""), identifier: "settings-shortcuts")
+            default: break
             }
         }
-        if Section.allCases[indexPath.section] == .techyThings && indexPath.row == TechyThingsRow.allCases.count {
-            let cell = InsetGroupTableViewCell(style: .default, reuseIdentifier: nil)
-            cell.style = .bottom
-            cell.isSelectable = true
-            cell.textLabel?.text = NSLocalizedString("Shortcuts", comment: "")
-            cell.textLabel?.font = .preferredFont(forTextStyle: .body)
-            cell.accessoryType = .disclosureIndicator
-            decorateSettingsCell(cell)
-            return cell
-        }
-
         if Section.allCases[indexPath.section] == .credits {
             if indexPath.row == 0 {
-                let cell = super.tableView(tableView, cellForRowAt: IndexPath(row: 3, section: indexPath.section))
+                let cell = super.tableView(tableView, cellForRowAt: IndexPath(row: 3, section: Section.credits.rawValue))
                 (cell as? InsetGroupTableViewCell)?.style = .top
                 decorateSettingsCell(cell)
                 return cell
@@ -1103,23 +1087,15 @@ extension SettingsViewController
             return cell
         }
         
-        let effectiveIndexPath: IndexPath
+        let cell = super.tableView(tableView, cellForRowAt: storyboardIndexPath(for: indexPath))
         if Section.allCases[indexPath.section] == .advancedSettings {
             let row = AdvancedSettingsRow.allCases[indexPath.row]
-            effectiveIndexPath = IndexPath(row: row.rawValue, section: indexPath.section)
-        } else if Section.allCases[indexPath.section] == .diagnostics {
-            effectiveIndexPath = IndexPath(row: DiagnosticsRow.allCases[indexPath.row].rawValue, section: indexPath.section)
-        } else if Section.allCases[indexPath.section] == .appRefresh {
-            effectiveIndexPath = IndexPath(row: AppRefreshRow.allCases[indexPath.row].rawValue, section: indexPath.section)
-        } else {
-            effectiveIndexPath = indexPath
+            if row == .developerOptions { cell.accessibilityIdentifier = "settings-developer-options" }
+            if row == .experimentalFeatures { cell.accessibilityIdentifier = "settings-experimental-features" }
         }
-        let cell = super.tableView(tableView, cellForRowAt: effectiveIndexPath)
         if Section.allCases[indexPath.section] == .diagnostics {
-            cell.accessibilityIdentifier = DiagnosticsRow.allCases[indexPath.row] == .developerOptions
-                ? "settings-developer-options" : "settings-experimental-features"
+            cell.accessibilityIdentifier = "settings-diagnostics-\(DiagnosticsRow.allCases[indexPath.row])"
         }
-        
         if Section.allCases[indexPath.section] == .account {
             if indexPath.row == 2 {
                 if let insetCell = cell as? InsetGroupTableViewCell {
@@ -1129,12 +1105,10 @@ extension SettingsViewController
         }
         
 
-        if Section.allCases[indexPath.section] == .techyThings && indexPath.row == TechyThingsRow.allCases.count - 1,
-           let insetCell = cell as? InsetGroupTableViewCell { insetCell.style = .middle }
         if AppRefreshRow.AllCases().count == 1
         {
             if let cell = cell as? InsetGroupTableViewCell,
-               indexPath.section == Section.appRefresh.rawValue,
+               Section.allCases[indexPath.section] == .appRefresh,
                indexPath.row == AppRefreshRow.backgroundRefresh.rawValue
             {
                 cell.style = .single
@@ -1142,7 +1116,7 @@ extension SettingsViewController
         }
         
         if let cell = cell as? InsetGroupTableViewCell,
-               indexPath.section == Section.appRefresh.rawValue,
+               Section.allCases[indexPath.section] == .appRefresh,
                indexPath.row == AppRefreshRow.allCases.count - 1  // last row
         {
             cell.style = .bottom
@@ -1165,6 +1139,15 @@ extension SettingsViewController
             let headerView = tableView.dequeueReusableHeaderFooterView(withIdentifier: "HeaderFooterView") as? SettingsHeaderFooterView
                 ?? SettingsHeaderFooterView(reuseIdentifier: "HeaderFooterView")
             self.prepare(headerView, for: section, isHeader: true)
+            if section != .signIn && section != .account {
+                headerView.configureDisclosure(identifier: "settings-section-\(section)", collapsed: collapsedSections.contains(section.rawValue)) { [weak self] in
+                    guard let self else { return }
+                    if self.collapsedSections.contains(section.rawValue) { self.collapsedSections.remove(section.rawValue) }
+                    else { self.collapsedSections.insert(section.rawValue) }
+                    UserDefaults.standard.set(Array(self.collapsedSections).sorted(), forKey: "zLoader.collapsedSettingsSections")
+                    self.tableView.reloadSections(IndexSet(integer: section.displayIndex), with: UIAccessibility.isReduceMotionEnabled ? .none : .automatic)
+                }
+            }
             return headerView
             
         case .instructions: return nil
@@ -1174,6 +1157,7 @@ extension SettingsViewController
     override func tableView(_ tableView: UITableView, viewForFooterInSection section: Int) -> UIView?
     {
         let section = Section.allCases[section]
+        if collapsedSections.contains(section.rawValue) { return nil }
         switch section
         {
         case _ where isSectionHidden(section): return nil
@@ -1198,8 +1182,7 @@ extension SettingsViewController
         case .signIn where self.activeTeam != nil: return 1.0
         case .account where self.activeTeam == nil: return 1.0
         case .signIn, .account, .patreon, .display, .appRefresh, .techyThings, .credits, .advancedSettings, .betaTesting, .diagnostics:
-            let height = self.preferredHeight(for: self.prototypeHeaderFooterView, in: section, isHeader: true)
-            return height
+            return UITableView.automaticDimension
             
         case .instructions: return 0.0
         }
@@ -1208,6 +1191,7 @@ extension SettingsViewController
     override func tableView(_ tableView: UITableView, heightForFooterInSection section: Int) -> CGFloat
     {
         let section = Section.allCases[section]
+        if collapsedSections.contains(section.rawValue) { return 0 }
         switch section
         {
         case _ where isSectionHidden(section): return 1.0
@@ -1323,6 +1307,11 @@ extension SettingsViewController
             let row = AdvancedSettingsRow.allCases[indexPath.row]
             switch row
             {
+            case .userCustomizations: pushSettings(UserCustomizationsView(), title: NSLocalizedString("User Customizations", comment: ""))
+            case .containerSettings: navigationController?.pushViewController(ContainerSettingsViewController(), animated: true)
+            case .developerOptions: pushSettings(DeveloperOptionsView(), title: NSLocalizedString("Developer Options", comment: ""))
+            case .experimentalFeatures: pushSettings(ExperimentalFeaturesView(), title: NSLocalizedString("Experimental Features", comment: ""))
+            case .shortcuts: pushSettings(ShortcutsSettingsView(), title: NSLocalizedString("Shortcuts", comment: ""))
             case .signingIdentities:
                 navigationController?.pushSigningView(CertificatesView(presentingViewController: self))
             case .sendFeedback:
@@ -1420,32 +1409,17 @@ extension SettingsViewController
             }
         
         case .diagnostics:
-            let row = DiagnosticsRow.allCases[indexPath.row]
-            switch row {
-            case .developerOptions:
-                let developerOptionsView = DeveloperOptionsView()
-                let hostingController = ZLoaderHostingController(rootView: developerOptionsView, usesGlass: false)
-                hostingController.view.backgroundColor = .settingsBackground
-                hostingController.title = NSLocalizedString("Developer Options", comment: "")
-                self.prepare(for: UIStoryboardSegue(identifier: "diagnostics", source: self, destination: hostingController), sender: nil)
-            case .containerSettings:
-                navigationController?.pushViewController(ContainerSettingsViewController(), animated: true)
-            case .userCustomizations:
-                let vc = ZLoaderHostingController(rootView: UserCustomizationsView(), usesGlass: false)
-                vc.view.backgroundColor = .settingsBackground
-                vc.title = NSLocalizedString("User Customizations", comment: "")
-                self.prepare(for: UIStoryboardSegue(identifier: "diagnostics", source: self, destination: vc), sender: nil)
-            case .experimentalFeatures:
-                let experimentalFeaturesView = ExperimentalFeaturesView()
-                let hostingController = ZLoaderHostingController(rootView: experimentalFeaturesView, usesGlass: false)
-                hostingController.view.backgroundColor = .settingsBackground
-                hostingController.title = NSLocalizedString("Experimental Features", comment: "")
-                self.prepare(for: UIStoryboardSegue(identifier: "diagnostics", source: self, destination: hostingController), sender: nil)
+            switch DiagnosticsRow.allCases[indexPath.row] {
+            case .healthCheck: pushSettings(HealthCheckView(), title: NSLocalizedString("Health Check", comment: ""))
+            case .errorLog, .refreshAttempts: break // Original storyboard destinations remain connected.
+            case .sendFeedback:
+                self.openWebURL(ZLoaderBrand.repositoryURL, preferredTintColor: .altPrimary)
             }
-            
-            
+        case .display:
+            if indexPath.row == 1 { pushSettings(ThemePickerView(), title: NSLocalizedString("Appearance", comment: "")) }
+
         // case .account, .patreon, .display, .instructions, .macDirtyCow: break
-        case .patreon, .display, .instructions, .betaTesting: break
+        case .patreon, .instructions, .betaTesting: break
         }
         
         
@@ -1521,40 +1495,36 @@ extension SettingsViewController {
         }.withRenderingMode(.alwaysTemplate)
     }
 
+    private func pushSettings<Content: View>(_ view: Content, title: String) {
+        let controller = ZLoaderHostingController(rootView: view, usesGlass: false)
+        controller.title = title
+        navigationController?.pushViewController(controller, animated: true)
+    }
+
+    private func settingsNavigationCell(title: String, identifier: String) -> UITableViewCell {
+        let cell = InsetGroupTableViewCell(style: .default, reuseIdentifier: nil)
+        cell.isSelectable = true
+        cell.textLabel?.text = title
+        cell.accessoryType = .disclosureIndicator
+        cell.accessibilityIdentifier = identifier
+        decorateSettingsCell(cell)
+        return cell
+    }
+
     private func decorateSettingsCell(_ cell: UITableViewCell) {
-        let configuration = UIImage.SymbolConfiguration(pointSize: 20, weight: .regular)
+        cell.backgroundConfiguration = .listCell()
+        if cell.accessoryView != nil {
+            cell.accessoryView = nil
+            cell.accessoryType = .disclosureIndicator
+        }
+        cell.detailTextLabel?.numberOfLines = 0
+        cell.textLabel?.font = .preferredFont(forTextStyle: .body)
+        cell.textLabel?.adjustsFontForContentSizeCategory = true
+        cell.textLabel?.numberOfLines = 0
+        cell.detailTextLabel?.adjustsFontForContentSizeCategory = true
         if let title = cell.textLabel?.text, !title.isEmpty {
-            cell.imageView?.image = settingsSymbol(for: title, configuration: configuration)
-            cell.imageView?.tag = 77023
-            cell.imageView?.tintColor = .settingsSymbol
-            cell.textLabel?.font = .preferredFont(forTextStyle: .body)
-            cell.textLabel?.adjustsFontForContentSizeCategory = true
-            return
+            cell.imageView?.image = settingsSymbol(for: title, configuration: UIImage.SymbolConfiguration(textStyle: .body))
+            cell.imageView?.tintColor = .altPrimary
         }
-        let tag = 77023
-        guard cell.contentView.viewWithTag(tag) == nil,
-              let title = cell.contentView.subviews.compactMap({ $0 as? UILabel }).filter({ !($0.text ?? "").isEmpty })
-                .min(by: { $0.frame.minX < $1.frame.minX }) else { return }
-        title.font = .preferredFont(forTextStyle: .body)
-        title.adjustsFontForContentSizeCategory = true
-        let icon = UIImageView(image: settingsSymbol(for: title.text ?? "", configuration: configuration))
-        icon.tag = tag
-        icon.tintColor = .settingsSymbol
-        icon.contentMode = .scaleAspectFit
-        icon.translatesAutoresizingMaskIntoConstraints = false
-        cell.contentView.addSubview(icon)
-        for constraint in cell.contentView.constraints where constraint.firstItem as? UILabel === title && constraint.firstAttribute == .leading {
-            constraint.constant += ZLoaderSettingsStyle.titleLeading - 30
-        }
-        if title.translatesAutoresizingMaskIntoConstraints {
-            title.frame.origin.x += ZLoaderSettingsStyle.titleLeading - 30
-            title.frame.size.width = max(0, title.frame.width - (ZLoaderSettingsStyle.titleLeading - 30))
-        }
-        NSLayoutConstraint.activate([
-            icon.leadingAnchor.constraint(equalTo: cell.contentView.leadingAnchor, constant: ZLoaderSettingsStyle.symbolLeading),
-            icon.centerYAnchor.constraint(equalTo: title.centerYAnchor),
-            icon.widthAnchor.constraint(equalToConstant: ZLoaderSettingsStyle.symbolFrame),
-            icon.heightAnchor.constraint(equalToConstant: ZLoaderSettingsStyle.symbolFrame)
-        ])
     }
 }
