@@ -32,30 +32,16 @@
       "versionDescription": "zLoader 0.8.7 adds a narrowly validated app-scheme fallback when iOS refuses the native bundle launch (including LaunchServices error 115). Selecting the current zLoader host keeps it in the foreground. The fallback uses only the exact zloader-<resigned bundle identifier> scheme registered during signing; arbitrary web URLs and third-party schemes are rejected. Settings now group appearance beside the app-icon entry; Advanced begins with User Customizations, Container Settings, then Developer Options. Health Check, Error Log, Refresh Attempts and Feedback are in Diagnostics. Storage and cache actions have their own section; Credits are last. Section expansion states persist across relaunches. A fixed mint accent, native grouped lists, semantic system colors and Light/Dark/Automatic appearance replace custom color selection and decorative settings cards. Existing signing identities, profiles, installed apps and unrelated localization edits are preserved. All 33 local regression scripts, launcher success/denial/fallback cases, five simulator UI tests plus the native-accessory recheck, the iPhoneOS Release build and package/signature checks passed. Simulator and controlled API tests do not prove the affected physical-device app launches, Apple login/signing or cellular lifecycle; those remain untested for this release. The existing pinned runtime dependency minimum remains iOS 26.5. Matching corresponding source, original authors, licenses and dependency patches are supplied separately; private repository history and credentials are excluded.",
       "screenshots": [],
       "marketingVersion": "0.8.7",
-      "releaseNotes": "zLoader 0.8.7 adds a narrowly validated app-scheme fallback when iOS refuses the native bundle launch (including LaunchServices error 115). Selecting the current zLoader host keeps it in the foreground. The fallback uses only the exact zloader-<resigned bundle identifier> scheme registered during signing; arbitrary web URLs and third-party schemes are rejected. Settings now group appearance beside the app-icon entry; Advanced begins with User Customizations, Container Settings, then Developer Options. Health Check, Error Log, Refresh Attempts and Feedback are in Diagnostics. Storage and cache actions have their own section; Credits are last. Section expansion states persist across relaunches. A fixed mint accent, native grouped lists, semantic system colors and Light/Dark/Automatic appearance replace custom color selection and decorative settings cards. Existing signing identities, profiles, installed apps and unrelated localization edits are preserved. All 33 local regression scripts, launcher success/denial/fallback cases, five simulator UI tests plus the native-accessory recheck, the iPhoneOS Release build and package/signature checks passed. Simulator and controlled API tests do not prove the affected physical-device app launches, Apple login/signing or cellular lifecycle; those remain untested for this release. The existing pinned runtime dependency minimum remains iOS 26.5. Matching corresponding source, original authors, licenses and dependency patches are supplied separately; private repository history and credentials are excluded.",
-      "pendingUpload": {
-        "sha": "2e54a2b9d2228f3fc2182c46fdf22a6832fad1aa",
-        "tag": "app-zloader-v0.8.7-20261101T164437Z-5016c14b",
-        "size": 35149779
-      },
-      "pendingSourceArchive": {
+      "sourceArchive": {
         "name": "zLoader-0.8.7-source.zip",
         "size": 67420597,
         "sha256": "e6213be5f2fb7e7a1017d532cbcf3e5914357d53a0bfdc28bb438a768fdf3a67",
-        "chunks": [
-          {
-            "sha": "59c7571ef534f5907c53d07bb4aaea7b78e60634",
-            "size": 25000000
-          },
-          {
-            "sha": "865959304fe09f556f00eb155340be0a06cad489",
-            "size": 25000000
-          },
-          {
-            "sha": "f0b6724c715066cb1b0fd6cc0a24f6ddb9091fc8",
-            "size": 17420597
-          }
-        ]
+        "downloadURL": "https://github.com/zynthec-dev/zloader-altsource/releases/download/app-zloader-v0.8.7-20261101T164437Z-5016c14b/zLoader-0.8.7-source.zip"
+      },
+      "releaseAsset": {
+        "size": 34977317,
+        "sha256": "5016c14b80aa2f9d92ee59926231a9c8b87eebdb7cb9c70936a8d964dbc58fe6",
+        "updatedAt": "2026-11-01T16:48:25.354422+00:00"
       }
     }
   },
