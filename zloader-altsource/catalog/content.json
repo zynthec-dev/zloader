@@ -20,8 +20,8 @@
       }
     },
     "com.zynthec.zLoader": {
-      "ipaFile": "zLoader-0.8.7-resignable.ipa",
-      "releaseTag": "app-zloader-v0.8.7-20261101T164437Z-5016c14b",
+      "ipaFile": "zLoader-0.8.8-resignable.ipa",
+      "releaseTag": "app-zloader-v0.8.8-20261103T113602Z-76837fa5",
       "name": "zLoader",
       "developerName": "zynthec-dev",
       "subtitle": "Independent SideStore fork for iPhone and iPad.",
@@ -29,19 +29,19 @@
       "category": "utilities",
       "tintColor": "#147D60",
       "iconFile": "catalog/assets/zloader-icon.png",
-      "versionDescription": "zLoader 0.8.7 adds a narrowly validated app-scheme fallback when iOS refuses the native bundle launch (including LaunchServices error 115). Selecting the current zLoader host keeps it in the foreground. The fallback uses only the exact zloader-<resigned bundle identifier> scheme registered during signing; arbitrary web URLs and third-party schemes are rejected. Settings now group appearance beside the app-icon entry; Advanced begins with User Customizations, Container Settings, then Developer Options. Health Check, Error Log, Refresh Attempts and Feedback are in Diagnostics. Storage and cache actions have their own section; Credits are last. Section expansion states persist across relaunches. A fixed mint accent, native grouped lists, semantic system colors and Light/Dark/Automatic appearance replace custom color selection and decorative settings cards. Existing signing identities, profiles, installed apps and unrelated localization edits are preserved. All 33 local regression scripts, launcher success/denial/fallback cases, five simulator UI tests plus the native-accessory recheck, the iPhoneOS Release build and package/signature checks passed. Simulator and controlled API tests do not prove the affected physical-device app launches, Apple login/signing or cellular lifecycle; those remain untested for this release. The existing pinned runtime dependency minimum remains iOS 26.5. Matching corresponding source, original authors, licenses and dependency patches are supplied separately; private repository history and credentials are excluded.",
+      "versionDescription": "zLoader 0.8.8 simplifies Settings into one continuous native list, beginning with User Customizations. Appearance contains display mode, language and the app-icon choice. Ordinary settings stay visible without intermediate section captions or explanatory footers. Advanced, Diagnostics and Credits are the only separate collapsible sections; all three start collapsed and remember later choices. Certificates appear once near the account area, remain accessible without Apple sign-in, and use the same neutral row styling as other settings. Sign Out moves to a red text action in the navigation bar. Native row layouts preserve existing switch values, actions and account fields, with consistent SF Symbols and adaptive spacing. The tab order is News, Sources, Apps, Browse, Settings, with News and Apps unchanged across languages. Existing signing identities, provisioning profiles, installed apps and unrelated localization edits are preserved. All 33 local regression scripts, eight focused simulator UI tests including large text, the iPhoneOS Release build and package/signature checks passed. Simulator and controlled tests do not prove physical-device app launches or Apple login/signing; the authenticated Sign Out presentation also remains untested with a real account. The existing pinned runtime dependency minimum remains iOS 26.5. Matching corresponding source, original authors, licenses and dependency patches are supplied separately; private repository history and credentials are excluded.",
       "screenshots": [],
-      "marketingVersion": "0.8.7",
+      "marketingVersion": "0.8.8",
       "sourceArchive": {
-        "name": "zLoader-0.8.7-source.zip",
-        "size": 67420597,
-        "sha256": "e6213be5f2fb7e7a1017d532cbcf3e5914357d53a0bfdc28bb438a768fdf3a67",
-        "downloadURL": "https://github.com/zynthec-dev/zloader-altsource/releases/download/app-zloader-v0.8.7-20261101T164437Z-5016c14b/zLoader-0.8.7-source.zip"
+        "name": "zLoader-0.8.8-source.zip",
+        "size": 67424608,
+        "sha256": "3aa80872d5bc0f1e86acab82dec3fb9295938ca5d429a03ac9855e0b89e9f22d",
+        "downloadURL": "https://github.com/zynthec-dev/zloader-altsource/releases/download/app-zloader-v0.8.8-20261103T113602Z-76837fa5/zLoader-0.8.8-source.zip"
       },
       "releaseAsset": {
-        "size": 34977317,
-        "sha256": "5016c14b80aa2f9d92ee59926231a9c8b87eebdb7cb9c70936a8d964dbc58fe6",
-        "updatedAt": "2026-11-01T16:48:25.354422+00:00"
+        "size": 34992135,
+        "sha256": "76837fa5d3416ade8ff45942b452a8717b498f6f5bcafb36400293ccaa801252",
+        "updatedAt": "2026-11-03T11:38:37.683973+00:00"
       }
     }
   },
