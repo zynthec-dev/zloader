@@ -27,7 +27,7 @@ final class MyAppsPagesViewController: UIViewController, UIPageViewControllerDat
 
     override func viewDidLoad() {
         super.viewDidLoad()
-        title = NSLocalizedString("My Apps", comment: "")
+        title = "Apps"
         view.backgroundColor = .altBackground
         definesPresentationContext = true
         containerSearch.obscuresBackgroundDuringPresentation = false

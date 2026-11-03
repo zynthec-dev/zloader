@@ -99,6 +99,7 @@ class NewsViewController: UICollectionViewController
     override func viewDidLoad()
     {
         super.viewDidLoad()
+        title = "News"
         
         self.collectionView.backgroundColor = .altBackground
         

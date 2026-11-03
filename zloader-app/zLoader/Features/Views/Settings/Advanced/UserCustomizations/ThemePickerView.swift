@@ -3,13 +3,14 @@
 import SwiftUI
 
 struct ThemePickerView: View {
+    var onAppIcon: (() -> Void)? = nil
     @ObservedObject private var theme = ThemeManager.shared
     @State private var selectedLanguage = AppLanguage.selected
     @State private var showsLanguageRestart = false
 
     var body: some View {
         List {
-            Section("Appearance") {
+            Section {
                 Picker(selection: $theme.appearance) {
                     ForEach(AppAppearance.allCases) { appearance in
                         Text(appearance.title, tableName: "SettingsLayout").tag(appearance)
@@ -19,8 +20,6 @@ struct ThemePickerView: View {
                 }
                 .pickerStyle(.menu)
                 .accessibilityIdentifier("appearance-mode")
-            }.zLoaderSettingsRows()
-            Section {
                 Picker(selection: $selectedLanguage) {
                     ForEach(AppLanguage.allCases) { language in
                         Text(language.title).tag(language)
@@ -29,10 +28,13 @@ struct ThemePickerView: View {
                     SettingsEntryLabel(title: "Language", systemImage: "globe")
                 }
                 .pickerStyle(.menu)
-            } footer: {
-                Group {
-                    Text("System follows your preferred iOS language. English is used when that language is not supported. Language changes take effect the next time you fully close and reopen zLoader.")
+                #if !os(tvOS)
+                if let onAppIcon {
+                    SwiftUI.Button(action: onAppIcon) { SettingsEntryLabel(title: "Change App Icon", systemImage: "app") }
+                        .buttonStyle(.plain)
+                        .accessibilityIdentifier("settings-change-app-icon")
                 }
+                #endif
             }.zLoaderSettingsRows()
         }
         .navigationTitle("Appearance")

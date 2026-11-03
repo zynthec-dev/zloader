@@ -281,6 +281,10 @@ enum SettingsEntrySymbol {
     static func name(for title: String) -> String {
         let entries: [(String, String)] = [
             ("Signing Identities", "signature"),
+            ("Certificates", "checkmark.seal"),
+            ("Sign in with Apple ID", "person.crop.circle"),
+            ("How it works", "questionmark.circle"),
+            ("Disable App Limit", "app.badge"),
             ("Apple Developer Portal", "hammer.circle"),
             ("Name", "person"),
             ("Email", "envelope"),
@@ -359,13 +363,14 @@ struct SettingsEntryLabel: View {
     var systemImage: String? = nil
     @Environment(\.settingsEntryIconsVisible) private var showsIcons
     var body: some View {
-        HStack(spacing: 12) {
-            if showsIcons {
+        if showsIcons {
+            Label {
+                Text(LocalizedStringKey(title))
+            } icon: {
                 Image(systemName: systemImage ?? SettingsEntrySymbol.name(for: title))
-                    .font(.system(size: ZLoaderSettingsStyle.symbolSize, weight: .regular))
                     .foregroundStyle(Color(uiColor: .settingsSymbol))
-                    .frame(width: ZLoaderSettingsStyle.symbolFrame, height: ZLoaderSettingsStyle.symbolFrame)
             }
+        } else {
             Text(LocalizedStringKey(title))
         }
     }

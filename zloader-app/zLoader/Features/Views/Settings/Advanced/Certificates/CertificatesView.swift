@@ -76,7 +76,9 @@ struct CertificatesView: View {
                 savedRequests
                 Section {
                     NavigationLink { SigningIdentitiesView() } label: {
-                        Text("Signing & profiles", tableName: "CertificatesUI")
+                        Label {
+                            Text("Signing & profiles", tableName: "CertificatesUI")
+                        } icon: { Image(systemName: "signature").foregroundStyle(Color(uiColor: .settingsSymbol)) }
                     }.accessibilityIdentifier("certificates-signing-configuration")
                 }.zynthecSettingsRows()
             }

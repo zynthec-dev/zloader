@@ -14,13 +14,13 @@ final class ContainerUITests: XCTestCase {
 
     func test001OnboardingAndContainerPages() throws {
         for _ in 0..<8 {
-            if app.tabBars.buttons["Meine Apps"].exists { break }
+            if app.tabBars.buttons["Apps"].exists { break }
             let labels = ["Open zLoader", "zLoader öffnen", "Continue Without Apple Account", "Ohne Apple-Account fortfahren",
                           "Ohne Apple-Konto fortfahren", "Set Up Later", "Später einrichten", "Get Started", "Los geht’s", "Los geht's", "Continue", "Weiter"]
             guard let button = labels.map({ app.buttons[$0] }).first(where: { $0.exists && $0.isHittable && $0.isEnabled }) else {
                 // Startup now correctly keeps inert tabs out of accessibility
                 // until the fade is finished. An onboarded app has no action.
-                if app.tabBars.buttons["Meine Apps"].waitForExistence(timeout: 15) { break }
+                if app.tabBars.buttons["Apps"].waitForExistence(timeout: 15) { break }
                 attach("onboarding-blocked")
                 print("Visible buttons: " + app.buttons.allElementsBoundByIndex.map(\.label).joined(separator: " | "))
                 print(app.debugDescription)
@@ -29,8 +29,8 @@ final class ContainerUITests: XCTestCase {
             }
             button.tap()
         }
-        XCTAssertTrue(app.tabBars.buttons["Meine Apps"].waitForExistence(timeout: 15))
-        app.tabBars.buttons["Meine Apps"].tap()
+        XCTAssertTrue(app.tabBars.buttons["Apps"].waitForExistence(timeout: 15))
+        app.tabBars.buttons["Apps"].tap()
         let pages = app.segmentedControls["my-apps-pages"]
         XCTAssertTrue(pages.waitForExistence(timeout: 10))
         attach("installed-app-grid")
@@ -68,7 +68,7 @@ final class ContainerUITests: XCTestCase {
     }
 
     func test002IPAChoiceAndContainerImport() throws {
-        app.tabBars.buttons["Meine Apps"].tap()
+        app.tabBars.buttons["Apps"].tap()
         for name in ["Alpha", "Beta", "Legacy"] {
             let pages = app.segmentedControls["my-apps-pages"]
             XCTAssertTrue(pages.waitForExistence(timeout: 15))
@@ -154,7 +154,7 @@ final class ContainerUITests: XCTestCase {
     }
 
     func test004HomeScreenShortcutActions() throws {
-        app.tabBars.buttons["Meine Apps"].tap()
+        app.tabBars.buttons["Apps"].tap()
         let pages = app.segmentedControls["my-apps-pages"]
         XCTAssertTrue(pages.waitForExistence(timeout: 15))
         pages.buttons["Apps in Containern"].tap()
@@ -179,7 +179,7 @@ final class ContainerUITests: XCTestCase {
     }
 
     func test005SharedPlusAndURLField() throws {
-        app.tabBars.buttons["Meine Apps"].tap()
+        app.tabBars.buttons["Apps"].tap()
         let pages = app.segmentedControls["my-apps-pages"]
         pages.buttons["Apps in Containern"].tap()
         let plus = app.buttons.matching(NSPredicate(format: "label IN %@", ["Install App", "App installieren"])).firstMatch
@@ -210,7 +210,7 @@ final class ContainerUITests: XCTestCase {
     }
 
     func test006VirtualMultitasking() throws {
-        app.tabBars.buttons["Meine Apps"].tap()
+        app.tabBars.buttons["Apps"].tap()
         let pages = app.segmentedControls["my-apps-pages"]
         XCTAssertTrue(pages.waitForExistence(timeout: 15))
         pages.buttons["Apps in Containern"].tap()
@@ -250,14 +250,17 @@ final class ContainerUITests: XCTestCase {
         let developer = app.cells["settings-developer-options"]
         let container = app.cells["settings-container"]
         let customizations = app.cells["settings-user-customizations"]
-        for _ in 0..<10 where !customizations.isHittable { app.swipeUp() }
+        XCTAssertTrue(customizations.waitForExistence(timeout: 10))
+        attach("settings088-customizations-first")
+        let advanced = app.buttons["settings-section-advancedSettings"]
+        for _ in 0..<10 where !advanced.isHittable { app.swipeUp() }
+        if advanced.value as? String == "Eingeklappt" { advanced.tap() }
+        for _ in 0..<6 where !container.isHittable { app.swipeUp() }
         attach("settings084-menu-before-check")
         print("Settings rows: developer=\(developer.exists)/\(developer.isHittable), container=\(container.exists)/\(container.isHittable), custom=\(customizations.exists)/\(customizations.isHittable)")
         if !container.exists || !customizations.exists { print(app.debugDescription) }
-        XCTAssertTrue(developer.exists && container.isHittable && customizations.exists)
+        XCTAssertTrue(developer.exists && container.isHittable)
         XCTAssertEqual(app.cells.matching(identifier: "settings-container").count, 1)
-        XCTAssertEqual(app.cells.matching(identifier: "settings-user-customizations").count, 1)
-        XCTAssertLessThan(customizations.frame.midY, container.frame.midY)
         XCTAssertLessThan(container.frame.midY, developer.frame.midY)
         attach("settings084-menu-order")
 
@@ -286,75 +289,53 @@ final class ContainerUITests: XCTestCase {
         app.buttons["container-settings-back"].tap()
         XCTAssertTrue(container.waitForExistence(timeout: 5))
         XCTAssertEqual(app.navigationBars.count, 1)
+        for _ in 0..<10 where !customizations.isHittable { app.swipeDown() }
         customizations.tap()
+        // UIKit exposes the destination bar after its push transition completes.
+        let customizationBack = app.navigationBars.buttons.firstMatch
+        XCTAssertTrue(customizationBack.waitForExistence(timeout: 5))
+        XCTAssertEqual(XCTWaiter.wait(for: [XCTNSPredicateExpectation(predicate: NSPredicate(format: "isHittable == true"), object: customizationBack)], timeout: 5), .completed)
         XCTAssertEqual(app.navigationBars.count, 1)
         XCTAssertEqual(app.navigationBars.buttons.count, 1)
         XCTAssertFalse(app.buttons["Appearance"].exists)
         XCTAssertFalse(app.buttons["Darstellung"].exists)
         attach("settings087-user-customizations")
         app.navigationBars.buttons.firstMatch.tap()
-        XCTAssertTrue(container.waitForExistence(timeout: 5))
+        XCTAssertTrue(customizations.waitForExistence(timeout: 5))
     }
 
     func test012CollapsibleSettingsAndAppearance() throws {
         app.terminate()
-        app.launchArguments += ["-hasCompletedOnboarding", "YES", "-zLoader.collapsedSettingsSections", "()", "-zLoader.appearance", "light"]
+        app.launchArguments += ["-hasCompletedOnboarding", "YES", "-zLoader.appearance", "light"]
         app.launch()
         app.buttons["Einstellungen"].firstMatch.tap()
         let appearance = app.cells["settings-appearance"]
         for _ in 0..<8 where !appearance.isHittable { app.swipeUp() }
-        XCTAssertTrue(appearance.isHittable)
         appearance.tap()
         XCTAssertTrue(app.buttons["appearance-mode"].waitForExistence(timeout: 10))
-        XCTAssertFalse(app.otherElements["Accent Color"].exists)
-        attach("settings087-native-appearance")
+        XCTAssertTrue(app.buttons["settings-change-app-icon"].exists)
+        attach("settings088-native-appearance")
         app.buttons["appearance-mode"].tap()
         app.buttons["Dunkel"].tap()
-        attach("settings087-native-appearance-dark")
+        attach("settings088-native-appearance-dark")
         app.buttons["appearance-mode"].tap()
         app.buttons["Automatisch"].tap()
+        app.buttons["settings-change-app-icon"].tap()
+        XCTAssertEqual(app.navigationBars.count, 1)
+        attach("settings088-app-icon-in-appearance")
         app.navigationBars.buttons.firstMatch.tap()
-        let display = app.buttons["settings-section-display"]
-        display.tap()
-        XCTAssertFalse(appearance.exists)
-        attach("settings087-display-collapsed")
-        app.terminate()
-        app.launchArguments = ["-AppleLanguages", "(de)", "-AppleLocale", "de_DE", "-hasCompletedOnboarding", "YES"]
-        app.launch()
-        app.buttons["Einstellungen"].firstMatch.tap()
-        XCTAssertTrue(display.waitForExistence(timeout: 10))
-        XCTAssertEqual(display.value as? String, "Eingeklappt")
-        XCTAssertFalse(appearance.exists)
-        display.tap()
-        XCTAssertTrue(appearance.waitForExistence(timeout: 5))
-        let advanced = app.buttons["settings-section-advancedSettings"]
-        for _ in 0..<10 where !advanced.isHittable { app.swipeUp() }
-        XCTAssertTrue(advanced.isHittable)
-        advanced.tap()
-        XCTAssertFalse(app.cells["settings-user-customizations"].exists)
-        let health = app.cells["settings-diagnostics-healthCheck"]
-        for _ in 0..<8 where !health.isHittable { app.swipeUp() }
-        XCTAssertTrue(health.isHittable)
-        attach("settings087-diagnostics-and-credits")
-        health.tap()
-        XCTAssertFalse(app.cells["settings-developer-options"].exists)
+        XCTAssertTrue(app.buttons["appearance-mode"].waitForExistence(timeout: 10))
         app.navigationBars.buttons.firstMatch.tap()
-        let credits = app.buttons["settings-section-credits"]
-        for _ in 0..<8 where !credits.isHittable { app.swipeUp() }
-        XCTAssertTrue(credits.isHittable)
-        let diagnostics = app.buttons["settings-section-diagnostics"]
-        XCTAssertLessThan(diagnostics.frame.midY, credits.frame.midY)
-        attach("settings087-credits-last")
-        // Restore all groups so the following tests have independent state.
-        for _ in 0..<10 where !advanced.isHittable { app.swipeDown() }
-        advanced.tap()
+        XCTAssertTrue(app.cells["settings-user-customizations"].waitForExistence(timeout: 5))
+        XCTAssertFalse(app.buttons["settings-section-display"].exists)
+        XCTAssertFalse(app.buttons["settings-section-appRefresh"].exists)
     }
 
     func test013SelectingCurrentAppKeepsItInForeground() throws {
         app.terminate()
         app.launchArguments += ["-hasCompletedOnboarding", "YES"]
         app.launch()
-        app.buttons["Meine Apps"].firstMatch.tap()
+        app.buttons["Apps"].firstMatch.tap()
         let host = app.buttons.matching(NSPredicate(format: "label BEGINSWITH %@", "zLoader\n")).firstMatch
         XCTAssertTrue(host.waitForExistence(timeout: 10))
         host.tap()
@@ -363,12 +344,113 @@ final class ContainerUITests: XCTestCase {
         attach("settings087-current-host-launch")
     }
 
+    func test014CertificateAccessAndSectionDefaults() throws {
+        app.terminate()
+        app.launchArguments = ["-AppleLanguages", "(de)", "-AppleLocale", "de_DE", "-hasCompletedOnboarding", "YES", "-zLoader.settingsGroupsVersion", "0", "-zLoader.collapsedSettingsSections", "()"]
+        app.launch()
+        app.buttons["Einstellungen"].firstMatch.tap()
+        let user = app.cells["settings-user-customizations"]
+        let certificates = app.cells["settings-signing-identities"]
+        XCTAssertTrue(user.waitForExistence(timeout: 10))
+        XCTAssertTrue(user.isHittable)
+        XCTAssertLessThan(user.frame.midY, certificates.frame.midY)
+        XCTAssertEqual(app.cells.matching(identifier: "settings-signing-identities").count, 1)
+        XCTAssertFalse(app.buttons["settings-sign-out"].exists)
+        XCTAssertFalse(app.staticTexts["settings-section-signIn"].exists)
+        XCTAssertFalse(app.staticTexts["Melde dich mit deiner Apple-ID an, um Apps aus zLoader herunterzuladen."].exists)
+        attach("settings088-continuous-main-list")
+        certificates.tap()
+        XCTAssertTrue(app.buttons["certificates-add"].waitForExistence(timeout: 10))
+        app.buttons["signing-root-back"].tap()
+        let advanced = app.buttons["settings-section-advancedSettings"]
+        for _ in 0..<8 where !advanced.isHittable { app.swipeUp() }
+        XCTAssertEqual(advanced.value as? String, "Eingeklappt")
+        XCTAssertFalse(app.cells["settings-container"].exists)
+        let diagnostics = app.buttons["settings-section-diagnostics"]
+        XCTAssertEqual(diagnostics.value as? String, "Eingeklappt")
+        let credits = app.buttons["settings-section-credits"]
+        for _ in 0..<6 where !credits.isHittable { app.swipeUp() }
+        XCTAssertEqual(credits.value as? String, "Eingeklappt")
+        credits.tap()
+        XCTAssertTrue(app.staticTexts["Lizenzen"].waitForExistence(timeout: 5))
+        attach("settings088-three-collapsible-groups")
+        credits.tap()
+        for _ in 0..<8 where !advanced.isHittable { app.swipeDown() }
+        advanced.tap()
+        XCTAssertTrue(app.cells["settings-container"].waitForExistence(timeout: 5))
+        app.terminate()
+        app.launchArguments = ["-AppleLanguages", "(de)", "-AppleLocale", "de_DE", "-hasCompletedOnboarding", "YES"]
+        app.launch()
+        app.buttons["Einstellungen"].firstMatch.tap()
+        let container = app.cells["settings-container"]
+        for _ in 0..<8 where !container.isHittable { app.swipeUp() }
+        XCTAssertTrue(container.isHittable)
+        attach("settings088-native-rows-and-persisted-expansion")
+        for _ in 0..<8 where !advanced.isHittable { app.swipeDown() }
+        advanced.tap()
+    }
+
+    func test015LocalizedTabOrder() throws {
+        for (language, locale, expected) in [("de", "de_DE", ["News", "Quellen", "Apps", "Entdecken", "Einstellungen"]), ("en", "en_US", ["News", "Sources", "Apps", "Browse", "Settings"])] {
+            app.terminate()
+            app.launchArguments = ["-AppleLanguages", "(\(language))", "-AppleLocale", locale, "-hasCompletedOnboarding", "YES"]
+            app.launch()
+            let tabs = (0..<5).map { app.buttons["main-tab-\($0)"].firstMatch }
+            XCTAssertTrue(tabs[0].waitForExistence(timeout: 20))
+            for index in 0..<5 { XCTAssertEqual(tabs[index].label, expected[index]) }
+            for index in 0..<4 { XCTAssertLessThan(tabs[index].frame.midX, tabs[index + 1].frame.midX) }
+            XCTAssertEqual(tabs[2].label, "Apps")
+            tabs[2].tap()
+            XCTAssertTrue(app.buttons["my-apps-add"].waitForExistence(timeout: 10))
+            tabs[4].tap()
+            XCTAssertTrue(app.cells["settings-signing-identities"].waitForExistence(timeout: 10))
+            attach("settings088-tabs-\(language)")
+        }
+    }
+
+    func test016NativeSwitchKeepsItsStoredValue() throws {
+        app.terminate()
+        app.launchArguments = ["-AppleLanguages", "(de)", "-AppleLocale", "de_DE", "-hasCompletedOnboarding", "YES"]
+        app.launch()
+        app.buttons["Einstellungen"].firstMatch.tap()
+        let idle = app.switches["Automatische Sperre verhindern"]
+        for _ in 0..<8 where !idle.isHittable { app.swipeUp() }
+        XCTAssertTrue(idle.isHittable)
+        let original = idle.value as? String
+        idle.tap()
+        XCTAssertNotEqual(idle.value as? String, original)
+        app.terminate()
+        app.launch()
+        app.buttons["Einstellungen"].firstMatch.tap()
+        for _ in 0..<8 where !idle.isHittable { app.swipeUp() }
+        XCTAssertNotEqual(idle.value as? String, original)
+        idle.tap()
+        XCTAssertEqual(idle.value as? String, original)
+        attach("settings088-native-switch-restored")
+    }
+
+    func test017SettingsAtAccessibilityTextSize() throws {
+        app.terminate()
+        app.launchArguments = ["-AppleLanguages", "(de)", "-AppleLocale", "de_DE", "-hasCompletedOnboarding", "YES", "-UIPreferredContentSizeCategoryName", "UICTContentSizeCategoryAccessibilityXXXL"]
+        app.launch()
+        app.buttons["Einstellungen"].firstMatch.tap()
+        XCTAssertTrue(app.cells["settings-user-customizations"].waitForExistence(timeout: 10))
+        attach("settings088-accessibility-main-list")
+        let certificates = app.cells["settings-signing-identities"]
+        for _ in 0..<8 where !certificates.isHittable { app.swipeUp() }
+        XCTAssertTrue(certificates.isHittable)
+        certificates.tap()
+        XCTAssertTrue(app.buttons["certificates-add"].waitForExistence(timeout: 10))
+        app.buttons["signing-root-back"].tap()
+        XCTAssertTrue(app.buttons["Einstellungen"].firstMatch.exists)
+    }
+
     func test009OfflineSigningAndLocalizedAppActions() throws {
         app.terminate()
         app.launchArguments += ["-hasCompletedOnboarding", "YES"]
         XCUIDevice.shared.orientation = .portrait
         app.launch()
-        let myApps = app.buttons["Meine Apps"].firstMatch
+        let myApps = app.buttons["Apps"].firstMatch
         XCTAssertTrue(myApps.waitForExistence(timeout: 20))
         myApps.tap()
         let add = app.buttons["my-apps-add"]
@@ -560,7 +642,7 @@ final class ContainerUITests: XCTestCase {
     }
 
     private func launchContainer(_ name: String) {
-        app.tabBars.buttons["Meine Apps"].tap()
+        app.tabBars.buttons["Apps"].tap()
         let pages = app.segmentedControls["my-apps-pages"]
         XCTAssertTrue(pages.waitForExistence(timeout: 15))
         pages.buttons["Apps in Containern"].tap()

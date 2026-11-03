@@ -1554,7 +1554,7 @@ Settings by i cons from the Noun Project</string>
         <!--Alt App Icons View Controller-->
         <scene sceneID="8H5-Rg-ZU9">
             <objects>
-                <collectionViewController id="1z3-Yk-n8E" customClass="AltAppIconsViewController" customModule="zLoader" customModuleProvider="target" sceneMemberID="viewController">
+                <collectionViewController storyboardIdentifier="appIconSettings" id="1z3-Yk-n8E" customClass="AltAppIconsViewController" customModule="zLoader" customModuleProvider="target" sceneMemberID="viewController">
                     <collectionView key="view" clipsSubviews="YES" multipleTouchEnabled="YES" contentMode="scaleToFill" dataMode="prototypes" id="zTl-Tz-PHw">
                         <rect key="frame" x="0.0" y="0.0" width="402" height="874"/>
                         <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>

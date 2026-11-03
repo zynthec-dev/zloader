@@ -173,3 +173,5 @@ Imported signing identities, account-free install/refresh and source IPA downloa
 0.7.65 integrates Refresh Cache into the developer settings list and unifies Settings destinations: [coverage and validation](docs/zloader/SETTINGS-STYLE-0.7.65.md).
 
 - [Settings organization and app launch, 0.8.7](docs/zloader/SETTINGS-AND-LAUNCH-0.8.7.md)
+
+- [Continuous Settings and tab order, 0.8.8](docs/zloader/SETTINGS-AND-TABS-0.8.8.md)

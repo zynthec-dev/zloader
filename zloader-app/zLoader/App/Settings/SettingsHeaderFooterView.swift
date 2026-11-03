@@ -26,10 +26,8 @@ final class SettingsHeaderFooterView: UITableViewHeaderFooterView
     }
 
     func configureDisclosure(identifier: String, collapsed: Bool, action: @escaping () -> Void) {
-        if disclosureButton.superview == nil, let row = primaryLabel.superview as? UIStackView {
-            row.insertArrangedSubview(disclosureButton, at: 0)
-        }
         var configuration = UIButton.Configuration.plain()
+        configuration.contentInsets = .zero
         configuration.title = primaryLabel.text
         configuration.image = UIImage(systemName: collapsed ? "chevron.forward" : "chevron.down")
         configuration.imagePlacement = .trailing
@@ -50,58 +48,47 @@ final class SettingsHeaderFooterView: UITableViewHeaderFooterView
         disclosureAction = handler
         disclosureButton.addAction(handler, for: .primaryActionTriggered)
     }
-    override init(reuseIdentifier: String?)
-    {
-        super.init(reuseIdentifier: reuseIdentifier)
+    func configureMargins(isHeader: Bool) {
+        let configuration = isHeader ? UIListContentConfiguration.header() : UIListContentConfiguration.footer()
+        contentView.directionalLayoutMargins = configuration.directionalLayoutMargins
+    }
 
+    override init(reuseIdentifier: String?) {
+        super.init(reuseIdentifier: reuseIdentifier)
         primaryLabel = UILabel()
         secondaryLabel = UILabel()
         button = UIButton(type: .system)
-        primaryLabel.font = UIFont.systemFont(ofSize: 14)
-        primaryLabel.textColor = .secondaryLabel
-        primaryLabel.setContentCompressionResistancePriority(.required, for: .vertical)
-        secondaryLabel.font = UIFont.systemFont(ofSize: 14)
-        secondaryLabel.textColor = .secondaryLabel
-        secondaryLabel.numberOfLines = 0
-        button.titleLabel?.font = UIFont.boldSystemFont(ofSize: 14)
-
-        let titleRow = UIStackView(arrangedSubviews: [primaryLabel, button])
-        titleRow.distribution = .equalSpacing
-        stackView = UIStackView(arrangedSubviews: [titleRow, secondaryLabel])
-        stackView.axis = .vertical
-        layoutMargins = UIEdgeInsets(top: 8, left: 30, bottom: 8, right: 30)
-        configureLayout()
-    }
-
-    required init?(coder: NSCoder)
-    {
-        super.init(coder: coder)
-    }
-
-    override func awakeFromNib()
-    {
-        super.awakeFromNib()
-        primaryLabel.textColor = .secondaryLabel
-        secondaryLabel.textColor = .secondaryLabel
-        button.setTitleColor(.altPrimary, for: .normal)
-        configureLayout()
-    }
-
-    private func configureLayout()
-    {
+        button.isHidden = true
         primaryLabel.font = .preferredFont(forTextStyle: .footnote)
         secondaryLabel.font = .preferredFont(forTextStyle: .footnote)
+        primaryLabel.textColor = .secondaryLabel
+        secondaryLabel.textColor = .secondaryLabel
+        primaryLabel.numberOfLines = 0
+        secondaryLabel.numberOfLines = 0
         primaryLabel.adjustsFontForContentSizeCategory = true
         secondaryLabel.adjustsFontForContentSizeCategory = true
-        self.contentView.layoutMargins = .zero
-        self.contentView.preservesSuperviewLayoutMargins = true
-        
-        self.stackView.translatesAutoresizingMaskIntoConstraints = false
-        self.contentView.addSubview(self.stackView)
-        
-        NSLayoutConstraint.activate([self.stackView.leadingAnchor.constraint(equalTo: self.contentView.layoutMarginsGuide.leadingAnchor),
-                                     self.stackView.trailingAnchor.constraint(equalTo: self.contentView.layoutMarginsGuide.trailingAnchor),
-                                     self.stackView.topAnchor.constraint(equalTo: self.contentView.layoutMarginsGuide.topAnchor),
-                                     self.stackView.bottomAnchor.constraint(equalTo: self.contentView.layoutMarginsGuide.bottomAnchor)])
+        stackView = UIStackView(arrangedSubviews: [primaryLabel, secondaryLabel, disclosureButton])
+        stackView.axis = .vertical
+        disclosureButton.isHidden = true
+        configureLayout()
+    }
+
+    required init?(coder: NSCoder) { super.init(coder: coder) }
+
+    override func awakeFromNib() {
+        super.awakeFromNib()
+        configureLayout()
+    }
+
+    private func configureLayout() {
+        contentView.preservesSuperviewLayoutMargins = true
+        stackView.translatesAutoresizingMaskIntoConstraints = false
+        contentView.addSubview(stackView)
+        NSLayoutConstraint.activate([
+            stackView.leadingAnchor.constraint(equalTo: contentView.layoutMarginsGuide.leadingAnchor),
+            stackView.trailingAnchor.constraint(equalTo: contentView.layoutMarginsGuide.trailingAnchor),
+            stackView.topAnchor.constraint(equalTo: contentView.layoutMarginsGuide.topAnchor),
+            stackView.bottomAnchor.constraint(equalTo: contentView.layoutMarginsGuide.bottomAnchor)
+        ])
     }
 }

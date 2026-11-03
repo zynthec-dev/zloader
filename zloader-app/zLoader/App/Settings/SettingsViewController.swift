@@ -35,11 +35,9 @@ extension SettingsViewController
         case betaTesting
         case advancedSettings
         case diagnostics
+        case main
         // Keep storyboard identities stable while ordering the visible sections.
-        static var allCases: [Section] {
-            [.signIn, .account, .patreon, .display, .appRefresh, .instructions,
-             .techyThings, .betaTesting, .advancedSettings, .diagnostics, .credits]
-        }
+        static var allCases: [Section] { [.main, .advancedSettings, .diagnostics, .credits] }
         var displayIndex: Int { Self.allCases.firstIndex(of: self)! }
     }
     
@@ -99,7 +97,7 @@ extension SettingsViewController
         case shortcuts
 
         static var allCases: [AdvancedSettingsRow] {
-            var rows: [AdvancedSettingsRow] = [.userCustomizations]
+            var rows: [AdvancedSettingsRow] = []
             if UIDevice.current.userInterfaceIdiom != .tv { rows.append(.containerSettings) }
             rows.append(contentsOf: [.developerOptions, .refreshSideJITServer, .pairingFileManagement])
             if !UserDefaults.standard.useOnDeviceAnisette {
@@ -108,7 +106,6 @@ extension SettingsViewController
             rows.append(contentsOf: [
                 .connectionConfig,
                 .networkDiscovery,
-                .signingIdentities,
                 .backupAndRestore,
                 .shortcuts
             ])
@@ -133,7 +130,17 @@ extension SettingsViewController
 
 final class SettingsViewController: UITableViewController
 {
-    private var collapsedSections: Set<Int> = Set(UserDefaults.standard.array(forKey: "zLoader.collapsedSettingsSections") as? [Int] ?? [])
+    private var collapsedSections: Set<Int> = {
+        let defaults = UserDefaults.standard
+        var sections = Set(defaults.array(forKey: "zLoader.collapsedSettingsSections") as? [Int] ?? [])
+        if defaults.integer(forKey: "zLoader.settingsGroupsVersion") < 2 {
+            sections.formUnion([Section.advancedSettings.rawValue, Section.diagnostics.rawValue, Section.credits.rawValue])
+            defaults.set(2, forKey: "zLoader.settingsGroupsVersion")
+        }
+        sections.formIntersection([Section.advancedSettings.rawValue, Section.diagnostics.rawValue, Section.credits.rawValue])
+        defaults.set(Array(sections).sorted(), forKey: "zLoader.collapsedSettingsSections")
+        return sections
+    }()
     private var activeTeam: ALTTeam?
     private var accountStatus: AccountVerificationRow.Status = .completed
     private var accountVerificationTask: Task<Void, Never>?
@@ -445,9 +452,10 @@ private extension SettingsViewController
                 self.accountStatus = .completed
                 self.updateAccountCardRowStyles()
             }
+            self.configureSignOutButton()
             self.tableView.reloadData()
         }
-        
+
         // AppRefreshRow
         self.backgroundRefreshSwitch?.isOn = UserDefaults.standard.isBackgroundRefreshEnabled
         self.noIdleTimeoutSwitch?.isOn = UserDefaults.standard.isIdleTimeoutDisableEnabled
@@ -472,6 +480,17 @@ private extension SettingsViewController
         }
     }
     
+    private func configureSignOutButton() {
+        guard activeTeam != nil else {
+            navigationItem.rightBarButtonItem = nil
+            return
+        }
+        let item = UIBarButtonItem(title: NSLocalizedString("Sign Out", comment: ""), style: .plain, target: self, action: #selector(signOut(_:)))
+        item.tintColor = .systemRed
+        item.accessibilityIdentifier = "settings-sign-out"
+        navigationItem.rightBarButtonItem = item
+    }
+
     private func startAccountVerification(for team: ALTTeam)
     {
         self.accountVerificationTask?.cancel()
@@ -491,15 +510,8 @@ private extension SettingsViewController
         }
     }
     
-    private func updateAccountCardRowStyles()
-    {
-        guard self.isViewLoaded else { return }
-        let typeIndexPath = IndexPath(row: 2, section: Section.account.displayIndex)
-        if let typeCell = self.tableView.cellForRow(at: typeIndexPath) as? InsetGroupTableViewCell {
-            typeCell.style = .middle
-        }
-    }
-    
+    private func updateAccountCardRowStyles() { /* Native list configuration owns row grouping. */ }
+
     private func resolvePendingAccountActions()
     {
         guard let team = self.activeTeam else { return }
@@ -517,10 +529,11 @@ private extension SettingsViewController
         settingsHeaderFooterView.secondaryLabel.isHidden = isHeader
         settingsHeaderFooterView.button.isHidden = true
         
-        settingsHeaderFooterView.layoutMargins.bottom = isHeader ? 0 : 8
+        settingsHeaderFooterView.configureMargins(isHeader: isHeader)
         
         switch section
         {
+        case .main: break
         case .signIn:
             if isHeader
             {
@@ -543,10 +556,6 @@ private extension SettingsViewController
 
         case .account:
             settingsHeaderFooterView.primaryLabel.text = NSLocalizedString("ACCOUNT", comment: "")
-            
-            settingsHeaderFooterView.button.setTitle(NSLocalizedString("SIGN OUT", comment: ""), for: .normal)
-            settingsHeaderFooterView.button.addTarget(self, action: #selector(SettingsViewController.signOut(_:)), for: .primaryActionTriggered)
-            settingsHeaderFooterView.button.isHidden = false
             
         case .appRefresh:
             if isHeader
@@ -624,12 +633,16 @@ private extension SettingsViewController
     
     private func preferredHeight(for settingsHeaderFooterView: SettingsHeaderFooterView, in section: Section, isHeader: Bool) -> CGFloat
     {
-        let widthConstraint = settingsHeaderFooterView.contentView.widthAnchor.constraint(equalToConstant: tableView.bounds.width)
+        let availableWidth = tableView.layoutMarginsGuide.layoutFrame.width
+        let widthConstraint = settingsHeaderFooterView.contentView.widthAnchor.constraint(equalToConstant: availableWidth > 0 ? availableWidth : tableView.bounds.width)
         NSLayoutConstraint.activate([widthConstraint])
         defer { NSLayoutConstraint.deactivate([widthConstraint]) }
         
         self.prepare(settingsHeaderFooterView, for: section, isHeader: isHeader)
-        
+        if isHeader && section != .main {
+            settingsHeaderFooterView.configureDisclosure(identifier: "", collapsed: collapsedSections.contains(section.rawValue), action: {})
+        }
+
         let size = settingsHeaderFooterView.contentView.systemLayoutSizeFitting(UIView.layoutFittingCompressedSize)
         return size.height
     }
@@ -943,7 +956,7 @@ extension SettingsViewController
     override func numberOfSections(in tableView: UITableView) -> Int
     {
         // Container and user settings remain available when diagnostics are hidden.
-        return super.numberOfSections(in: tableView)
+        return Section.allCases.count
     }
     
     private func storyboardIndexPath(for indexPath: IndexPath) -> IndexPath {
@@ -1000,7 +1013,8 @@ extension SettingsViewController
         switch section
         {
         case _ where isSectionHidden(section) || collapsedSections.contains(section.rawValue): return 0
-        case .signIn: return (self.activeTeam == nil) ? 1 : 0
+        case .main: return mainRows.count
+        case .signIn: return (self.activeTeam == nil) ? 2 : 0
         case .account: return (self.activeTeam == nil) ? 0 : (self.accountStatus == .completed ? 5 : 6)
         case .display: return 2
         case .appRefresh: return AppRefreshRow.allCases.count
@@ -1013,15 +1027,9 @@ extension SettingsViewController
     
     override func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell
     {
-        if Section.allCases[indexPath.section] == .advancedSettings && AdvancedSettingsRow.allCases[indexPath.row] == .signingIdentities {
-            let cell = InsetGroupTableViewCell(style: .default, reuseIdentifier: nil)
-            cell.isSelectable = true
-            cell.textLabel?.text = NSLocalizedString("Certificates", comment: "")
-            cell.textLabel?.font = .preferredFont(forTextStyle: .body)
-            cell.accessibilityIdentifier = "settings-signing-identities"
-            cell.accessoryType = .disclosureIndicator
-            decorateSettingsCell(cell)
-            return cell
+        if Section.allCases[indexPath.section] == .main { return mainCell(for: mainRows[indexPath.row]) }
+        if Section.allCases[indexPath.section] == .signIn && indexPath.row == 1 {
+            return settingsNavigationCell(title: NSLocalizedString("Certificates", comment: ""), identifier: "settings-signing-identities")
         }
         if Section.allCases[indexPath.section] == .display && indexPath.row == 1 {
             return settingsNavigationCell(title: NSLocalizedString("Appearance", comment: ""), identifier: "settings-appearance")
@@ -1061,6 +1069,7 @@ extension SettingsViewController
             let cell = InsetGroupTableViewCell(style: .default, reuseIdentifier: nil)
             cell.style = .middle
             cell.isSelectable = true
+            cell.accessibilityIdentifier = "settings-signing-identities"
             cell.textLabel?.text = NSLocalizedString("Certificates", comment: "")
             cell.accessoryType = .disclosureIndicator
             decorateSettingsCell(cell)
@@ -1088,6 +1097,7 @@ extension SettingsViewController
         }
         
         let cell = super.tableView(tableView, cellForRowAt: storyboardIndexPath(for: indexPath))
+        if Section.allCases[indexPath.section] == .signIn { cell.accessibilityIdentifier = "settings-sign-in" }
         if Section.allCases[indexPath.section] == .advancedSettings {
             let row = AdvancedSettingsRow.allCases[indexPath.row]
             if row == .developerOptions { cell.accessibilityIdentifier = "settings-developer-options" }
@@ -1127,84 +1137,31 @@ extension SettingsViewController
         return cell
     }
     
-    override func tableView(_ tableView: UITableView, viewForHeaderInSection section: Int) -> UIView?
-    {
-        let section = Section.allCases[section]
-        switch section
-        {
-        case _ where isSectionHidden(section): return nil
-        case .signIn where self.activeTeam != nil: return nil
-        case .account where self.activeTeam == nil: return nil
-        case .signIn, .account, .patreon, .display, .appRefresh, .techyThings, .credits, .advancedSettings, .betaTesting, .diagnostics /* ,.macDirtyCow */:
-            let headerView = tableView.dequeueReusableHeaderFooterView(withIdentifier: "HeaderFooterView") as? SettingsHeaderFooterView
-                ?? SettingsHeaderFooterView(reuseIdentifier: "HeaderFooterView")
-            self.prepare(headerView, for: section, isHeader: true)
-            if section != .signIn && section != .account {
-                headerView.configureDisclosure(identifier: "settings-section-\(section)", collapsed: collapsedSections.contains(section.rawValue)) { [weak self] in
-                    guard let self else { return }
-                    if self.collapsedSections.contains(section.rawValue) { self.collapsedSections.remove(section.rawValue) }
-                    else { self.collapsedSections.insert(section.rawValue) }
-                    UserDefaults.standard.set(Array(self.collapsedSections).sorted(), forKey: "zLoader.collapsedSettingsSections")
-                    self.tableView.reloadSections(IndexSet(integer: section.displayIndex), with: UIAccessibility.isReduceMotionEnabled ? .none : .automatic)
-                }
-            }
-            return headerView
-            
-        case .instructions: return nil
+    override func tableView(_ tableView: UITableView, viewForHeaderInSection index: Int) -> UIView? {
+        let section = Section.allCases[index]
+        guard section != .main else { return nil }
+        let header = tableView.dequeueReusableHeaderFooterView(withIdentifier: "HeaderFooterView") as? SettingsHeaderFooterView ?? SettingsHeaderFooterView(reuseIdentifier: "HeaderFooterView")
+        prepare(header, for: section, isHeader: true)
+        header.configureDisclosure(identifier: "settings-section-\(section)", collapsed: collapsedSections.contains(section.rawValue)) { [weak self] in
+            guard let self else { return }
+            if self.collapsedSections.contains(section.rawValue) { self.collapsedSections.remove(section.rawValue) }
+            else { self.collapsedSections.insert(section.rawValue) }
+            UserDefaults.standard.set(Array(self.collapsedSections).sorted(), forKey: "zLoader.collapsedSettingsSections")
+            self.tableView.reloadSections(IndexSet(integer: section.displayIndex), with: UIAccessibility.isReduceMotionEnabled ? .none : .automatic)
         }
-    }
-    
-    override func tableView(_ tableView: UITableView, viewForFooterInSection section: Int) -> UIView?
-    {
-        let section = Section.allCases[section]
-        if collapsedSections.contains(section.rawValue) { return nil }
-        switch section
-        {
-        case _ where isSectionHidden(section): return nil
-        case .signIn where self.activeTeam != nil: return nil
-        // case .signIn, .patreon, .display, .appRefresh, .techyThings, .macDirtyCow:
-        case .signIn, .patreon, .display, .appRefresh, .techyThings, .betaTesting:
-            let footerView = tableView.dequeueReusableHeaderFooterView(withIdentifier: "HeaderFooterView") as? SettingsHeaderFooterView
-                ?? SettingsHeaderFooterView(reuseIdentifier: "HeaderFooterView")
-            self.prepare(footerView, for: section, isHeader: false)
-            return footerView
-            
-        case .account, .credits, .advancedSettings, .instructions, .diagnostics: return nil
-        }
+        return header
     }
 
-    override func tableView(_ tableView: UITableView, heightForHeaderInSection section: Int) -> CGFloat
-    {
-        let section = Section.allCases[section]
-        switch section
-        {
-        case _ where isSectionHidden(section): return 1.0
-        case .signIn where self.activeTeam != nil: return 1.0
-        case .account where self.activeTeam == nil: return 1.0
-        case .signIn, .account, .patreon, .display, .appRefresh, .techyThings, .credits, .advancedSettings, .betaTesting, .diagnostics:
-            return UITableView.automaticDimension
-            
-        case .instructions: return 0.0
-        }
+    override func tableView(_ tableView: UITableView, heightForHeaderInSection index: Int) -> CGFloat {
+        let section = Section.allCases[index]
+        return section == .main ? .leastNormalMagnitude : preferredHeight(for: prototypeHeaderFooterView, in: section, isHeader: true)
     }
-    
-    override func tableView(_ tableView: UITableView, heightForFooterInSection section: Int) -> CGFloat
-    {
-        let section = Section.allCases[section]
-        if collapsedSections.contains(section.rawValue) { return 0 }
-        switch section
-        {
-        case _ where isSectionHidden(section): return 1.0
-        case .signIn where self.activeTeam != nil: return 1.0
-        case .account where self.activeTeam == nil: return 1.0            
-        // case .signIn, .patreon, .display, .appRefresh, .techyThings, .macDirtyCow:
-        case .signIn, .patreon, .display, .appRefresh, .techyThings, .betaTesting:
-            let height = self.preferredHeight(for: self.prototypeHeaderFooterView, in: section, isHeader: false)
-            return height
-            
-        case .account, .credits, .advancedSettings, .instructions, .diagnostics: return 0.0
-        }
-    }
+
+    override func tableView(_ tableView: UITableView, titleForHeaderInSection section: Int) -> String? { nil }
+    override func tableView(_ tableView: UITableView, titleForFooterInSection section: Int) -> String? { nil }
+    override func tableView(_ tableView: UITableView, viewForFooterInSection section: Int) -> UIView? { nil }
+    override func tableView(_ tableView: UITableView, heightForFooterInSection section: Int) -> CGFloat { .leastNormalMagnitude }
+
 }
 
 extension SettingsViewController
@@ -1215,7 +1172,10 @@ extension SettingsViewController
         verboseLog("[SettingsVC] didSelectRowAt: section \(section) (index \(indexPath.section)), row \(indexPath.row)")
         switch section
         {
-        case .signIn: self.signIn()
+        case .main: selectMain(mainRows[indexPath.row])
+        case .signIn:
+            if indexPath.row == 1 { navigationController?.pushSigningView(CertificatesView(presentingViewController: self)) }
+            else { self.signIn() }
         case .account:
             tableView.deselectRow(at: indexPath, animated: true)
             if indexPath.row == 3 {
@@ -1483,16 +1443,101 @@ extension SettingsViewController: INUIAddVoiceShortcutViewControllerDelegate
 #endif
 
 extension SettingsViewController {
-    private func settingsSymbol(for title: String, configuration: UIImage.SymbolConfiguration) -> UIImage? {
-        guard let image = UIImage(systemName: SettingsEntrySymbol.name(for: title), withConfiguration: configuration)
-            ?? UIImage(systemName: "gearshape", withConfiguration: configuration) else { return nil }
-        // Fixed canvas keeps narrow and wide SF Symbols in the same column.
-        let side: CGFloat = 22
-        let scale = min(side / image.size.width, side / image.size.height)
-        let size = CGSize(width: image.size.width * scale, height: image.size.height * scale)
-        return UIGraphicsImageRenderer(size: CGSize(width: side, height: side)).image { _ in
-            image.draw(in: CGRect(x: (side - size.width) / 2, y: (side - size.height) / 2, width: size.width, height: size.height))
-        }.withRenderingMode(.alwaysTemplate)
+    private enum MainRow: Equatable {
+        case customizations, signIn, accountName, accountEmail, accountType, certificates, portal, verification
+        case appearance, backgroundRefresh, idleTimeout, disableLimit, storage, clearCache, help
+    }
+
+    private var mainRows: [MainRow] {
+        var rows: [MainRow] = [.customizations]
+        if activeTeam == nil { rows.append(.signIn) }
+        else { rows.append(contentsOf: [.accountName, .accountEmail, .accountType]) }
+        rows.append(.certificates)
+        if activeTeam != nil {
+            rows.append(.portal)
+            if accountStatus != .completed { rows.append(.verification) }
+        }
+        rows.append(contentsOf: [.appearance, .backgroundRefresh, .idleTimeout])
+        if AppRefreshRow.allCases.contains(.disableAppLimit) { rows.append(.disableLimit) }
+        rows.append(contentsOf: [.storage, .clearCache, .help])
+        return rows
+    }
+
+    private func mainCell(for row: MainRow) -> UITableViewCell {
+        switch row {
+        case .customizations: return settingsNavigationCell(title: NSLocalizedString("User Customizations", comment: ""), identifier: "settings-user-customizations")
+        case .certificates: return settingsNavigationCell(title: NSLocalizedString("Certificates", comment: ""), identifier: "settings-signing-identities")
+        case .appearance: return settingsNavigationCell(title: NSLocalizedString("Appearance", comment: ""), identifier: "settings-appearance")
+        case .portal:
+            let cell = settingsNavigationCell(title: NSLocalizedString("Apple Developer Portal", comment: ""), identifier: "settings-apple-portal")
+            cell.isUserInteractionEnabled = activeTeam?.type.isPaid == true
+            return cell
+        case .verification:
+            let cell = AccountVerificationRow()
+            cell.configure(with: accountStatus)
+            return cell
+        default: break
+        }
+        let source: IndexPath
+        switch row {
+        case .signIn: source = IndexPath(row: 0, section: Section.signIn.rawValue)
+        case .accountName: source = IndexPath(row: 0, section: Section.account.rawValue)
+        case .accountEmail: source = IndexPath(row: 1, section: Section.account.rawValue)
+        case .accountType: source = IndexPath(row: 2, section: Section.account.rawValue)
+        case .backgroundRefresh: source = IndexPath(row: 0, section: Section.appRefresh.rawValue)
+        case .idleTimeout: source = IndexPath(row: 1, section: Section.appRefresh.rawValue)
+        case .disableLimit: source = IndexPath(row: 3, section: Section.appRefresh.rawValue)
+        case .storage: source = IndexPath(row: 2, section: Section.techyThings.rawValue)
+        case .clearCache: source = IndexPath(row: 3, section: Section.techyThings.rawValue)
+        case .help: source = IndexPath(row: 0, section: Section.instructions.rawValue)
+        default: preconditionFailure("Synthetic settings row must be configured above")
+        }
+        let cell = super.tableView(tableView, cellForRowAt: source)
+        if row == .signIn { cell.accessibilityIdentifier = "settings-sign-in" }
+        decorateSettingsCell(cell)
+        return cell
+    }
+
+    private func selectMain(_ row: MainRow) {
+        switch row {
+        case .customizations: pushSettings(UserCustomizationsView(), title: NSLocalizedString("User Customizations", comment: ""))
+        case .signIn: signIn()
+        case .certificates: navigationController?.pushSigningView(CertificatesView(presentingViewController: self))
+        case .portal:
+            if activeTeam?.type.isPaid == true { pushSettings(DeveloperServicesView(presentingViewController: self), title: NSLocalizedString("Apple Developer Portal", comment: "")) }
+        case .verification: resolvePendingAccountActions()
+        case .appearance:
+            pushSettings(ThemePickerView(onAppIcon: { [weak self] in
+                guard let self, let controller = self.storyboard?.instantiateViewController(withIdentifier: "appIconSettings") else { return }
+                self.navigationController?.pushViewController(controller, animated: true)
+            }), title: NSLocalizedString("Appearance", comment: ""))
+        case .storage:
+                verboseLog("[SettingsVC] Storage Explorer selected")
+                StorageExplorerView.clearCache()
+                func makeExplorerVC(url: URL? = nil) -> UIViewController {
+                    let onSelectFolder: (URL) -> Void = { [weak self] targetURL in
+                        guard let self = self else { return }
+                        verboseLog("[SettingsVC] Navigating to child folder: \(targetURL.path)")
+                        let childVC = makeExplorerVC(url: targetURL)
+                        self.navigationController?.pushViewController(childVC, animated: true)
+                    }
+                    if let url = url {
+                        verboseLog("[SettingsVC] Creating DirectoryExplorerView for: \(url.path)")
+                        let view = DirectoryExplorerView(url: url, onSelectFolder: onSelectFolder)
+                        return ZLoaderHostingController(rootView: view, usesGlass: false)
+                    } else {
+                        verboseLog("[SettingsVC] Creating root StorageExplorerView")
+                        let view = StorageExplorerView(onSelectFolder: onSelectFolder)
+                        return ZLoaderHostingController(rootView: view, usesGlass: false)
+                    }
+                }
+                let vc = makeExplorerVC()
+                verboseLog("[SettingsVC] Pushing root StorageExplorerView controller onto navigationController")
+                navigationController?.pushViewController(vc, animated: true)
+
+        case .clearCache: clearCache()
+        default: break
+        }
     }
 
     private func pushSettings<Content: View>(_ view: Content, title: String) {
@@ -1513,18 +1558,7 @@ extension SettingsViewController {
 
     private func decorateSettingsCell(_ cell: UITableViewCell) {
         cell.backgroundConfiguration = .listCell()
-        if cell.accessoryView != nil {
-            cell.accessoryView = nil
-            cell.accessoryType = .disclosureIndicator
-        }
-        cell.detailTextLabel?.numberOfLines = 0
-        cell.textLabel?.font = .preferredFont(forTextStyle: .body)
-        cell.textLabel?.adjustsFontForContentSizeCategory = true
-        cell.textLabel?.numberOfLines = 0
-        cell.detailTextLabel?.adjustsFontForContentSizeCategory = true
-        if let title = cell.textLabel?.text, !title.isEmpty {
-            cell.imageView?.image = settingsSymbol(for: title, configuration: UIImage.SymbolConfiguration(textStyle: .body))
-            cell.imageView?.tintColor = .altPrimary
-        }
+        guard let cell = cell as? InsetGroupTableViewCell, !(cell is AccountVerificationRow) else { return }
+        cell.configureNativeContent()
     }
 }
