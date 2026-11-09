@@ -11,6 +11,13 @@
 - Beide Ordner gehören zum selben Git-Repository. Keine neuen separaten Repositories oder Klone an den alten Pfaden unter `Workspace/Projekte` anlegen.
 - Git-Befehle für das Gesamtprojekt am Repository-Stamm ausführen; Build- und Testbefehle im jeweiligen Unterordner. Abhängigkeiten am Stamm mit `git submodule update --init --recursive` initialisieren.
 - Offene Änderungen anderer Chats erhalten. Insbesondere wurde die vorhandene Änderung an `zloader-app/zLoader/Features/Resources/Localizable.xcstrings` uncommittet übernommen.
-- Das Monorepo und seine vollständige Git-Historie bleiben privat. `origin` ist weiterhin `zynthec-dev/zloader-app`. Niemals das gesamte Repository nach `zynthec-dev/zloader-altsource` pushen.
+- Das Monorepo und seine vollständige Git-Historie sind auf ausdrücklichen Nutzerauftrag öffentlich. `origin` ist `zynthec-dev/zloader`. Niemals das gesamte Repository nach `zynthec-dev/zloader-altsource` pushen.
 - Das öffentliche AltSource-Repo bleibt Veröffentlichungsziel. Änderungen von dort mit `git subtree pull --prefix=zloader-altsource https://github.com/zynthec-dev/zloader-altsource.git main` übernehmen. Nur den abgespaltenen AltSource-Teil veröffentlichen; Ablauf und Prüfungen stehen in `README.md`.
 - Abgeschlossene eigene Änderungen lokal committen; bestehende fremde Änderungen nicht mit aufnehmen. Eine Migration allein löst keinen Release oder Deployment aus.
+
+## GitHub-Abgleich · 9. November 2026
+
+Nutzerauftrag: GitHub-Namen an die lokalen Projektordner angleichen und die
+Repositories synchronisieren. Aktuelles Remote: `https://github.com/zynthec-dev/zloader.git`.
+Keine Repositories löschen oder archivieren. Bestehende Arbeitsstände erhalten.
+zLoader bleibt öffentlich. Die früheren Privat-Vorgaben sind durch diesen Nutzerauftrag ersetzt.

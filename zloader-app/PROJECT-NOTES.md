@@ -9,7 +9,7 @@ Run app build commands from this directory, and repository-wide Git operations
 from the shared root. Initialize submodules from the shared root. Do not recreate
 the former checkout at `Workspace/Projekte/zloader-app`.
 
-This is the user's independent private zLoader clone, not a SideStore contribution.
+This is the user's independent public zLoader project, not a SideStore contribution.
 Original authors and licenses must remain credited. If a future task targets an
 upstream contribution, follow SideStore's original participation rules from the
 baseline history and establish the contributor's eligibility before generating
@@ -47,5 +47,5 @@ corresponding-source archive as separate public GitHub release downloads in
 `zynthec-dev/zloader-altsource`, then update https://source.zloader.de. The feed
 contains the app update and IPA download only; keep the source archive outside
 the feed. This is standing authorization for future versions, including 0.7.57.
-Keep the private app repository and its Git history private. Report untested
+The user explicitly requires the app repository and Git history to remain public (9 November 2026). Report untested
 physical-device behavior accurately in release notes.

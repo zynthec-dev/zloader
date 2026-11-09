@@ -1,6 +1,6 @@
 # zLoader
 
-Ein gemeinsames privates Repository für App, Website, AltSource-Feed und Admin.
+Ein gemeinsames öffentliches Repository für App, Website, AltSource-Feed und Admin.
 Der Arbeitsordner für alle Projekt-Chats ist
 `/Users/renewittern/Workspace/Apps:Software/zloader`.
 
@@ -37,7 +37,7 @@ Veröffentlichungsziel und werden dort weiterhin verwendet.
 
 ## Öffentliches Veröffentlichungsziel
 
-`origin` bleibt das private Repository `zynthec-dev/zloader-app`.
+`origin` ist das öffentliche Repository `zynthec-dev/zloader`.
 Das öffentliche Repository `zynthec-dev/zloader-altsource` enthält weiterhin nur
 Website, Feed und Admin sowie öffentliche Release-Dateien. Seine bestehende
 Cloudflare-Anbindung und Admin-Uploads bleiben darüber erreichbar.
@@ -60,7 +60,7 @@ git merge-base --is-ancestor 81456b1 publish/altsource
 
 Vor dem Push den abgespaltenen Baum prüfen: Er muss `catalog/`, `site/`,
 `scripts/` und die AltSource-Konfiguration enthalten. `zloader-app/`,
-`zLoader/`, `Dependencies/` und private App-Historie dürfen nicht enthalten sein.
+`zLoader/`, `Dependencies/` und vollständige App-Historie dürfen nicht enthalten sein.
 Nur diesen geprüften Veröffentlichungsbranch an das öffentliche Ziel senden:
 
 ```sh
