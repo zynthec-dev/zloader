@@ -53,18 +53,18 @@ git subtree pull --prefix=zloader-altsource https://github.com/zynthec-dev/zload
 Zum Vorbereiten einer Veröffentlichung ausschließlich den Unterordner abspalten:
 
 ```sh
-git subtree split --prefix=zloader-altsource -b publish/altsource
-git ls-tree --name-only publish/altsource
-git merge-base --is-ancestor 81456b1 publish/altsource
+altsource_commit=$(git subtree split --prefix=zloader-altsource)
+git ls-tree --name-only "$altsource_commit"
+git merge-base --is-ancestor 81456b1 "$altsource_commit"
 ```
 
 Vor dem Push den abgespaltenen Baum prüfen: Er muss `catalog/`, `site/`,
 `scripts/` und die AltSource-Konfiguration enthalten. `zloader-app/`,
 `zLoader/`, `Dependencies/` und vollständige App-Historie dürfen nicht enthalten sein.
-Nur diesen geprüften Veröffentlichungsbranch an das öffentliche Ziel senden:
+Nur diesen geprüften Export-Commit an das öffentliche Ziel senden; dafür ist kein zusätzlicher lokaler Branch nötig:
 
 ```sh
-git push https://github.com/zynthec-dev/zloader-altsource.git publish/altsource:main
+git push https://github.com/zynthec-dev/zloader-altsource.git "$altsource_commit:refs/heads/main"
 ```
 
 Niemals `HEAD`, den Entwicklungsbranch, `--all` oder `--mirror` an das öffentliche
@@ -75,10 +75,10 @@ Ziel pushen. Neue App-Releases folgen zusätzlich der Policy in
 
 Die bisherigen Git-Historien wurden ohne Umschreiben importiert:
 
-- App: `234a42f0` auf `main`, einschließlich des lokalen Commits für 0.8.6.
+- App: `234a42f0` auf dem damaligen `zloader-development`, einschließlich des lokalen Commits für 0.8.6.
 - AltSource: `81456b1`, einschließlich der beiden zuvor lokal fehlenden Katalog-Commits.
 - App-Branches, Tags, Reflogs und der zusätzliche Entwicklungs-Worktree bleiben erhalten.
-- Historische Branches behalten ihre ursprüngliche Dateistruktur. Neue Entwicklungsbranches vom migrierten `main` abzweigen.
+- Historische Branches behielten bei der damaligen Migration ihre ursprüngliche Dateistruktur. Seit der geprüften Vereinheitlichung vom 9. November 2026 erfolgt die weitere Entwicklung auf `main`.
 - AltSource-Branches und Remote-Refs liegen unter `refs/migration/altsource/`; Tags sind unter `altsource/` namensräumlich getrennt.
 - Die originale AltSource-Git-Verwaltung und der ursprüngliche App-Index liegen als lokale Rückfallsicherung unter `.git/migration-backups/`. Sie gehören nicht zum veröffentlichten Inhalt.
 - Die vorhandene Übersetzungsänderung bleibt uncommittet. Ihre SHA-256-Prüfsumme wurde vor und nach dem Umzug verglichen.
