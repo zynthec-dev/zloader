@@ -21,3 +21,9 @@ Nutzerauftrag: GitHub-Namen an die lokalen Projektordner angleichen und die
 Repositories synchronisieren. Aktuelles Remote: `https://github.com/zynthec-dev/zloader.git`.
 Keine Repositories löschen oder archivieren. Bestehende Arbeitsstände erhalten.
 zLoader bleibt öffentlich. Die früheren Privat-Vorgaben sind durch diesen Nutzerauftrag ersetzt.
+
+## Branch-Vereinheitlichung · 9. November 2026
+
+Nutzerauftrag: Nach geprüfter Übernahme ausschließlich `main` verwenden.
+Die bestehende Lokalisierungsänderung ist strukturell validiert und übernommen;
+der bisherige Entwicklungsbranch heißt jetzt `main`.

@@ -75,10 +75,10 @@ Ziel pushen. Neue App-Releases folgen zusätzlich der Policy in
 
 Die bisherigen Git-Historien wurden ohne Umschreiben importiert:
 
-- App: `234a42f0` auf `zloader-development`, einschließlich des lokalen Commits für 0.8.6.
+- App: `234a42f0` auf `main`, einschließlich des lokalen Commits für 0.8.6.
 - AltSource: `81456b1`, einschließlich der beiden zuvor lokal fehlenden Katalog-Commits.
 - App-Branches, Tags, Reflogs und der zusätzliche Entwicklungs-Worktree bleiben erhalten.
-- Historische Branches behalten ihre ursprüngliche Dateistruktur. Neue Entwicklungsbranches vom migrierten `zloader-development` abzweigen.
+- Historische Branches behalten ihre ursprüngliche Dateistruktur. Neue Entwicklungsbranches vom migrierten `main` abzweigen.
 - AltSource-Branches und Remote-Refs liegen unter `refs/migration/altsource/`; Tags sind unter `altsource/` namensräumlich getrennt.
 - Die originale AltSource-Git-Verwaltung und der ursprüngliche App-Index liegen als lokale Rückfallsicherung unter `.git/migration-backups/`. Sie gehören nicht zum veröffentlichten Inhalt.
 - Die vorhandene Übersetzungsänderung bleibt uncommittet. Ihre SHA-256-Prüfsumme wurde vor und nach dem Umzug verglichen.
