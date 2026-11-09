@@ -3,7 +3,7 @@
 Eine schlanke AltStore-/SideStore-Source für eigene IPA-Dateien mit browserbasierter Admin-Seite.
 
 Die Entwicklung erfolgt jetzt im Unterordner `zloader-altsource/` des gemeinsamen
-privaten zLoader-Repositories. Die folgenden lokalen Befehle dort ausführen.
+öffentlichen zLoader-Repositories. Die folgenden lokalen Befehle dort ausführen.
 Das öffentliche Repository bleibt das Veröffentlichungsziel; im Monorepo gelten
 zusätzlich die Hinweise zum Abspalten und Synchronisieren im übergeordneten README.
 
